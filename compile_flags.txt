@@ -1,0 +1,7 @@
+-Wall
+-std=c2x
+-Wstrict-prototypes
+-Iinclude
+-IE:\DevLibs\Include
+-DNVEXPORT
+-D_DEBUG

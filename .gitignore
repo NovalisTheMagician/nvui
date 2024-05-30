@@ -1,0 +1,16 @@
+*.o
+
+*.exe
+*.dll
+*.so
+*.a
+
+*.log
+
+.ccls-cache
+
+memory_logs.txt
+
+testui
+
+build/
