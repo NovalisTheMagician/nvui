@@ -512,7 +512,7 @@ NVAPI int MessageLoop(void)
     for(size_t i = 0; i < global.windowCount; ++i)
     {
         DestroyWindow(global.windows[i]);
-        //free(global.windows[i]);
+        free(global.windows[i]);
     }
     free(global.windows);
 
