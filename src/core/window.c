@@ -1,15 +1,9 @@
 #include "nvui/window.h"
 
-#include <GL/glx.h>
-#include <X11/X.h>
 #include <stdlib.h>
 
 #include "nvui/element.h"
 #include "nvui/painter.h"
-
-#ifdef _WIN32
-#include <glad2/gl.h>
-#endif
 
 #include <stdio.h>
 
@@ -84,7 +78,6 @@ static void RemoveAllElements(Element *element)
 }
 
 #ifdef _WIN32
-#include <nvui/gl/wglext.h>
 
 #define WINDOW_CLASS "NVWINDOW"
 
@@ -131,13 +124,8 @@ static bool LoadPreGLFunctions(void)
     ok = wglMakeCurrent(dc, rc);
     if(!ok) return false;
 
-    PFNWGLGETEXTENSIONSSTRINGARBPROC wglGetExtensionsStringARB = (void*)wglGetProcAddress("wglGetExtensionsStringARB");
-    if(!wglGetExtensionsStringARB) return false;
-
     // I assume that every computer in todays age should support the required wgl extension to create a modern opengl context
-    wglChoosePixelFormatARB = (void*)wglGetProcAddress("wglChoosePixelFormatARB");
-    wglCreateContextAttribsARB = (void*)wglGetProcAddress("wglCreateContextAttribsARB");
-    wglSwapIntervalEXT = (void*)wglGetProcAddress("wglSwapIntervalEXT");
+    gladLoaderLoadWGL(dc);
 
     wglMakeCurrent(NULL, NULL);
     wglDeleteContext(rc);
@@ -328,12 +316,6 @@ NVAPI int MessageLoop(void)
 #elif defined __linux__
 #include <string.h>
 
-typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
-typedef void (*glXSwapIntervalEXTProc)(Display*, GLXDrawable, int);
-
-static glXCreateContextAttribsARBProc glXCreateContextAttribsARB = NULL;
-static glXSwapIntervalEXTProc glXSwapIntervalEXT = NULL;
-
 static void MakeCurrent(Window *window)
 {
     glXMakeCurrent(global.display, window->window, window->context);
@@ -402,6 +384,9 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
 
     int screenId = DefaultScreen(global.display);
 
+    // I assume that every computer in todays age should support the required glx extension to create a modern opengl context
+    gladLoaderLoadGLX(global.display, screenId);
+
     GLint majorGLX, minorGLX = 0;
     glXQueryVersion(global.display, &majorGLX, &minorGLX);
     if(majorGLX <= 1 && minorGLX <= 2) return NULL;
@@ -441,10 +426,6 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
 
     XSetWMProtocols(global.display, window->window, &global.windowClosedID, 1);
     XMapRaised(global.display, window->window);
-
-    // I assume that every computer in todays age should support the required glx extension to create a modern opengl context
-    glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc)glXGetProcAddress((const GLubyte*)"glXCreateContextAttribsARB");
-    glXSwapIntervalEXT = (glXSwapIntervalEXTProc)glXGetProcAddress((const GLubyte*)"glXSwapIntervalEXT");
 
     int contextAttribs[] = 
     {

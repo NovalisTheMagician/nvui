@@ -10,7 +10,7 @@ SRC_SUBDIRS := core widgets core/platform
 DEFINES := __USE_XOPEN _GNU_SOURCE NVEXPORT
 INC_DIRS := include
 
-LIBS := m glad2 triangulate stdc++
+LIBS := m triangulate stdc++
 LIB_DIRS := 
 
 CC := gcc
@@ -60,7 +60,20 @@ CPPFLAGS := $(addprefix -I,$(INC_DIRS)) $(addprefix -D,$(DEFINES)) -MMD -MP
 LIB_FLAGS := $(addprefix -L,$(LIB_DIRS)) $(addprefix -l,$(LIBS))
 
 # SRCS := $(wildcard $(SRC_DIR)/*.c)
-SRCS := $(wildcard $(SRC_DIR)/*.c) $(foreach pat,$(SRC_SUBDIRS),$(wildcard $(SRC_DIR)/$(pat)/*.c))
+SRCS := $(wildcard $(SRC_DIR)/*.c) $(foreach pat,$(SRC_SUBDIRS),$(wildcard $(SRC_DIR)/$(pat)/*.c)) src/glad/gl.c
+
+ifeq ($(OS),Windows_NT)
+    SRCS += src/glad/wgl.c
+else
+    UNAME_S := $(shell uname -s)
+    ifeq ($(UNAME_S),Linux)
+        SRCS += src/glad/glx.c
+    endif
+    ifeq ($(UNAME_S),Darwin)
+    endif
+    ifeq ($(UNAME_S),FreeBSD)
+    endif
+endif
 OBJS := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SRCS))
 
 BUILD_DIRS := $(addprefix $(BUILD_DIR)/,$(SRC_SUBDIRS))
@@ -71,7 +84,7 @@ lib: $(BUILD_DIR) $(LIBRARY_NAME)
 lib_static: $(BUILD_DIR) $(LIBRARY_STATIC)
 
 $(BUILD_DIR):
-	@mkdir -p $(BUILD_DIRS)
+	@mkdir -p $(BUILD_DIRS) build/glad
 
 $(APPLICATION): $(LIBRARY_NAME) test/main.c
 	@echo "LD $@"
