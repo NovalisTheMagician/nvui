@@ -1,5 +1,6 @@
 #include "nvui/util.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 NVAPI bool RectangleValid(Rectangle a)

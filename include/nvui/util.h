@@ -2,7 +2,7 @@
 
 #include "nvui.h"
 
-#include <stdlib.h>
+#include <stddef.h>
 typedef struct Rectangle
 {
     int l, r, t, b;

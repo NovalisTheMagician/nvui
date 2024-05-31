@@ -10,7 +10,7 @@
     #endif
 #else
     #ifdef NVEXPORT
-        #define NVAPI __attribute__((visibility(default)))
+        #define NVAPI __attribute__((visibility("default")))
     #else
         #define NVAPI
     #endif

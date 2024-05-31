@@ -1,9 +1,14 @@
 #include "nvui/window.h"
 
-#include <stdint.h>
+#include <GL/gl.h>
+#include <GL/glx.h>
+#include <GL/glxext.h>
+#include <X11/X.h>
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
 #include <stdlib.h>
-#include <glad2/gl.h>
 
+#include "nvui/element.h"
 #include "nvui/painter.h"
 
 #include <stdio.h>
@@ -289,21 +294,162 @@ NVAPI int MessageLoop(void)
 }
 
 #elif defined __linux__
-#include <GL/glx.h>
+#include <string.h>
+
+typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
+static glXCreateContextAttribsARBProc glXCreateContextAttribsARB = NULL;
+
+static Window* FindWindow(X11Window window)
+{
+    for(size_t i = 0; i < global.windowCount; ++i)
+    {
+        if(global.windows[i]->window == window)
+            return global.windows[i];
+    }
+    return NULL;
+}
+
+static void WindowEndPaint(Window *window, Painter *painter)
+{
+    glXSwapBuffers(global.display, window->window);
+}
+
+static bool LoadGLFunctions(void)
+{
+    if(!glFuncsLoaded)
+    {
+        int ret = gladLoadGL((GLADloadfunc)glXGetProcAddress);
+        if(ret) glFuncsLoaded = true;
+        else return ret;
+    }
+
+    glEnable(GL_SCISSOR_TEST);
+
+    return true;
+}
 
 NVAPI void Initialize(void)
 {
-    
+    global.display = XOpenDisplay(NULL);
+    global.visual = XDefaultVisual(global.display, 0);
+    global.windowClosedID = XInternAtom(global.display, "WM_DELETE_WINDOW", 0);
 }
 
 NVAPI Window* WindowCreate(const char *title, int width, int height)
 {
-    
+    Window *window = (Window*)ElementCreate(sizeof *window, NULL, 0, WindowMessage);
+    window->e.window = window;
+    global.windowCount++;
+    global.windows = realloc(global.windows, sizeof *global.windows * global.windowCount);
+    global.windows[global.windowCount - 1] = window;
+
+    int screenId = DefaultScreen(global.display);
+
+    GLint majorGLX, minorGLX = 0;
+    glXQueryVersion(global.display, &majorGLX, &minorGLX);
+    if(majorGLX <= 1 && minorGLX <= 2) return NULL;
+
+    GLint glxAttribs[] =
+    {
+        GLX_X_RENDERABLE, True,
+        GLX_DRAWABLE_TYPE, GLX_WINDOW_BIT,
+        GLX_RENDER_TYPE, GLX_RGBA_BIT,
+        GLX_X_VISUAL_TYPE, GLX_TRUE_COLOR,
+        GLX_RED_SIZE, 8,
+        GLX_GREEN_SIZE, 8,
+        GLX_BLUE_SIZE, 8,
+        GLX_ALPHA_SIZE, 8,
+        GLX_DEPTH_SIZE, 24,
+        GLX_STENCIL_SIZE, 8,
+        GLX_DOUBLEBUFFER, True,
+        None
+    };
+    int fbcount;
+    GLXFBConfig *fbc = glXChooseFBConfig(global.display, screenId, glxAttribs, &fbcount);
+    if(!fbc) return NULL;
+
+    XVisualInfo *visual = glXGetVisualFromFBConfig(global.display, fbc[0]);
+    if(!visual) return NULL;
+
+    XSetWindowAttributes windowAttrib = {};
+    windowAttrib.border_pixel = BlackPixel(global.display, screenId);
+    windowAttrib.background_pixel = WhitePixel(global.display, screenId);
+    windowAttrib.override_redirect = True;
+    windowAttrib.colormap = XCreateColormap(global.display, DefaultRootWindow(global.display), visual->visual, AllocNone);
+
+    window->window = XCreateWindow(global.display, DefaultRootWindow(global.display), 0, 0, width, height, 0, visual->depth, InputOutput, visual->visual, CWBackingPixel | CWColormap | CWBorderPixel | CWEventMask, &windowAttrib);
+    XStoreName(global.display, window->window, title);
+    XSelectInput(global.display, window->window, SubstructureNotifyMask | ExposureMask | PointerMotionMask | ButtonPressMask | ButtonReleaseMask | KeyPressMask | KeyReleaseMask | StructureNotifyMask | EnterWindowMask | LeaveWindowMask | ButtonMotionMask | KeymapStateMask | FocusChangeMask | PropertyChangeMask);
+
+    XMapRaised(global.display, window->window);
+    XSetWMProtocols(global.display, window->window, &global.windowClosedID, 1);
+
+    // I assume that every computer in todays age should support the required wgl extension to create a modern opengl context
+    glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc)glXGetProcAddress((const GLubyte*)"glXCreateContextAttribsARB");
+
+    int contextAttribs[] = 
+    {
+        GLX_CONTEXT_MAJOR_VERSION_ARB, 4,
+        GLX_CONTEXT_MINOR_VERSION_ARB, 6,
+#ifdef _DEBUG
+        GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
+#endif
+        None
+    };
+
+    window->context = glXCreateContextAttribsARB(global.display, fbc[0], NULL, true, contextAttribs);
+    if(!window->context) return NULL;
+    if(!glXIsDirect(global.display, window->context)) return NULL;
+
+    glXMakeCurrent(global.display, window->window, window->context);
+
+    LoadGLFunctions();
+
+    return window;
 }
 
 NVAPI int MessageLoop(void)
 {
-    
+    Update();
+
+    while(true)
+    {
+        XEvent event;
+        XNextEvent(global.display, &event);
+
+        if(event.type == ClientMessage && (Atom)event.xclient.data.l[0] == global.windowClosedID)
+            return 0;
+
+        switch(event.type)
+        {
+        case Expose:
+            {
+                Window *window = FindWindow(event.xexpose.window);
+                if(!window) continue;
+
+                // XPutImage
+            }
+            break;
+        case ConfigureNotify:
+            {
+                Window *window = FindWindow(event.xconfigure.window);
+                if(!window) continue;
+
+                if(window->width != event.xconfigure.width || window->height != event.xconfigure.height)
+                {
+                    window->width = event.xconfigure.width;
+                    window->height = event.xconfigure.height;
+
+                    window->e.bounds = (Rectangle){ .r = window->width, .b = window->height };
+                    window->e.clip = (Rectangle){ .r = window->width, .b = window->height };
+
+                    ElementMessage(&window->e, MSG_LAYOUT, 0, NULL);
+                    Update();
+                }
+            }
+            break;
+        }
+    }
 }
 
 #endif

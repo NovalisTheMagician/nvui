@@ -1,10 +1,11 @@
 #pragma once
 
+#include <stdlib.h>
 #include "nvui.h"
 #include "element.h"
 #include "color.h"
+#include <glad2/gl.h>
 
-#include <stdlib.h>
 
 #ifdef _WIN32
 #define Rectangle W32Rectangle
@@ -18,13 +19,13 @@
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
 #include <X11/cursorfont.h>
+#include <GL/glx.h>
 #undef Window
 #endif
 
 typedef struct Window
 {
     Element e;
-    char *title;
     int width, height;
     Rectangle updateRegion;
     Color windowColor;
@@ -36,6 +37,7 @@ typedef struct Window
     bool trackingLeave;
 #elif __linux__
     X11Window window;
+    GLXContext context;
 #endif
 } Window;
 

@@ -23,6 +23,8 @@ LDFLAGS := -shared
 AR ?= ar
 ARFLAGS := rcs
 
+TESTFLAGS := -l$(LIBRARY) -Iinclude -L. -Wl,-rpath,. -std=c2x -g
+
 ifeq ($(CONFIG),release)
     DEFINES += NDEBUG
     CCFLAGS += -O2
@@ -39,6 +41,7 @@ ifeq ($(OS),Windows_NT)
     LIB_DIRS += $(LIB_GCC_PATH)
     INC_DIRS += $(INC_PATH)
     LDFLAGS += -mwindows 
+    TESTFLAGS += -mconsole
 else
     LIBRARY_NAME := lib$(LIBRARY).so
     LDFLAGS += -fvisibility=hidden
@@ -72,7 +75,7 @@ $(BUILD_DIR):
 
 $(APPLICATION): $(LIBRARY_NAME) test/main.c
 	@echo "LD $@"
-	@$(LD) -o $@ -l$(LIBRARY) -Iinclude -L. -mconsole -Wl,-rpath,. -std=c2x -g test/main.c
+	@$(LD) -o $@ $(TESTFLAGS) test/main.c
 
 $(LIBRARY_STATIC): $(OBJS)
 	@echo "AR $@"
