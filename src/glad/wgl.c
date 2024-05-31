@@ -25,6 +25,7 @@ extern "C" {
 
 int GLAD_WGL_VERSION_1_0 = 0;
 int GLAD_WGL_ARB_create_context = 0;
+int GLAD_WGL_ARB_create_context_profile = 0;
 int GLAD_WGL_ARB_extensions_string = 0;
 int GLAD_WGL_ARB_framebuffer_sRGB = 0;
 int GLAD_WGL_ARB_multisample = 0;
@@ -110,6 +111,7 @@ static GLADapiproc glad_wgl_get_proc_from_userptr(void *userptr, const char* nam
 
 static int glad_wgl_find_extensions_wgl(HDC hdc) {
     GLAD_WGL_ARB_create_context = glad_wgl_has_extension(hdc, "WGL_ARB_create_context");
+    GLAD_WGL_ARB_create_context_profile = glad_wgl_has_extension(hdc, "WGL_ARB_create_context_profile");
     GLAD_WGL_ARB_extensions_string = glad_wgl_has_extension(hdc, "WGL_ARB_extensions_string");
     GLAD_WGL_ARB_framebuffer_sRGB = glad_wgl_has_extension(hdc, "WGL_ARB_framebuffer_sRGB");
     GLAD_WGL_ARB_multisample = glad_wgl_has_extension(hdc, "WGL_ARB_multisample");

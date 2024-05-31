@@ -29,6 +29,7 @@ int GLAD_GLX_VERSION_1_2 = 0;
 int GLAD_GLX_VERSION_1_3 = 0;
 int GLAD_GLX_VERSION_1_4 = 0;
 int GLAD_GLX_ARB_create_context = 0;
+int GLAD_GLX_ARB_create_context_profile = 0;
 int GLAD_GLX_ARB_framebuffer_sRGB = 0;
 int GLAD_GLX_ARB_multisample = 0;
 int GLAD_GLX_EXT_swap_control = 0;
@@ -187,6 +188,7 @@ static GLADapiproc glad_glx_get_proc_from_userptr(void *userptr, const char* nam
 
 static int glad_glx_find_extensions(Display *display, int screen) {
     GLAD_GLX_ARB_create_context = glad_glx_has_extension(display, screen, "GLX_ARB_create_context");
+    GLAD_GLX_ARB_create_context_profile = glad_glx_has_extension(display, screen, "GLX_ARB_create_context_profile");
     GLAD_GLX_ARB_framebuffer_sRGB = glad_glx_has_extension(display, screen, "GLX_ARB_framebuffer_sRGB");
     GLAD_GLX_ARB_multisample = glad_glx_has_extension(display, screen, "GLX_ARB_multisample");
     GLAD_GLX_EXT_swap_control = glad_glx_has_extension(display, screen, "GLX_EXT_swap_control");
