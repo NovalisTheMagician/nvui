@@ -50,7 +50,6 @@ typedef struct GlobalState
 
 #ifdef __linux__
     Display *display;
-    Visual *visual;
     Atom windowClosedID;
 #endif
 } GlobalState;

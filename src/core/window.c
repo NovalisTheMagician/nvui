@@ -236,7 +236,7 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
     window->windowColor = (Color){ .r = 1, .b = 1, .a = 1 };
 
     global.windowCount++;
-    global.windows = realloc(global.windows, sizeof *global.windows * global.windowCount);
+    global.windows = realloc(global.windows, sizeof(Window*) * global.windowCount);
     global.windows[global.windowCount - 1] = window;
 
     window->hwnd = CreateWindowExA(WS_EX_OVERLAPPEDWINDOW, WINDOW_CLASS, title, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, width, height, NULL, NULL, NULL, NULL);
@@ -316,6 +316,7 @@ NVAPI int MessageLoop(void)
         _DestroyWindow(global.windows[i]);
         //free(global.windows[i]);
     }
+    free(global.windows);
 
     return message.wParam;
 }
@@ -357,6 +358,12 @@ static bool LoadGLFunctions(void)
 
 static void DestroyWindow(Window *window)
 {
+    if(window->e.childCount)
+    {
+        RemoveAllElements(window->e.children[0]);
+        free(window->e.children);
+    }
+
     glXMakeCurrent(global.display, 0, NULL);
     glXDestroyContext(global.display, window->context);
     XFree(window->visual);
@@ -367,7 +374,6 @@ static void DestroyWindow(Window *window)
 NVAPI void Initialize(void)
 {
     global.display = XOpenDisplay(NULL);
-    //global.visual = XDefaultVisual(global.display, 0);
     global.windowClosedID = XInternAtom(global.display, "WM_DELETE_WINDOW", 0);
 }
 
@@ -376,7 +382,7 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
     Window *window = (Window*)ElementCreate(sizeof *window, NULL, 0, WindowMessage);
     window->e.window = window;
     global.windowCount++;
-    global.windows = realloc(global.windows, sizeof *global.windows * global.windowCount);
+    global.windows = realloc(global.windows, sizeof(Window*) * global.windowCount);
     global.windows[global.windowCount - 1] = window;
 
     int screenId = DefaultScreen(global.display);
@@ -504,8 +510,9 @@ NVAPI int MessageLoop(void)
     for(size_t i = 0; i < global.windowCount; ++i)
     {
         DestroyWindow(global.windows[i]);
-        free(global.windows[i]);
+        //free(global.windows[i]);
     }
+    free(global.windows);
 
     XCloseDisplay(global.display);
     return 0;
