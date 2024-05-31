@@ -76,6 +76,22 @@ int ElementDMessage(Element *element, Message message, int di, void *dp) {
 	return 0;
 }
 
+int ElementEMessage(Element *element, Message message, int di, void *dp)
+{
+	Rectangle bounds = element->bounds;
+
+	if (message == MSG_PAINT) {
+        Painter *painter = dp;
+        painter->backColor = ColorFromInt(0x33CC33);
+		//PainterFillRect(painter, bounds);
+        PainterClear(painter);
+	} else if (message == MSG_LAYOUT) {
+		fprintf(stderr, "layout E with bounds (%d->%d;%d->%d)\n", bounds.l, bounds.r, bounds.t, bounds.b);
+	}
+
+	return 0;
+}
+
 int main(int argc, char *argv[])
 {
     Initialize();
@@ -89,5 +105,8 @@ int main(int argc, char *argv[])
 	elementB = ElementCreate(sizeof(Element), elementA, 0, ElementBMessage);
 	elementC = ElementCreate(sizeof(Element), elementB, 0, ElementCMessage);
 	elementD = ElementCreate(sizeof(Element), elementB, 0, ElementDMessage);
+
+	Window *w2 = WindowCreate("Hah", 300, 300);
+	Element *elementE = ElementCreate(sizeof *elementE, &w2->e, 0, ElementEMessage);
     return MessageLoop();
 }

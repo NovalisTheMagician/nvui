@@ -1,5 +1,7 @@
 #include "nvui/window.h"
 
+#include <GL/glx.h>
+#include <X11/X.h>
 #include <stdlib.h>
 
 #include "nvui/element.h"
@@ -46,13 +48,16 @@ static void ElementPaint(Element *element, Painter *painter)
     }
 }
 
+static void MakeCurrent(Window *window);
+
 static void Update(void)
 {
     for(size_t i = 0; i < global.windowCount; ++i)
     {
         Window *window = global.windows[i];
+        MakeCurrent(window);
         //glClearColor(window->windowColor.r, window->windowColor.g, window->windowColor.b, window->windowColor.a);
-        glClear(GL_COLOR_BUFFER_BIT);
+        //glClear(GL_COLOR_BUFFER_BIT);
         if(RectangleValid(window->updateRegion))
         {
             Painter painter;
@@ -86,6 +91,11 @@ static void RemoveAllElements(Element *element)
 static PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB = NULL;
 static PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = NULL;
 static PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = NULL;
+
+static void MakeCurrent(Window *window)
+{
+    wglMakeCurrent(window->hdc, window->hglrc);
+}
 
 static bool LoadPreGLFunctions(void)
 {
@@ -319,7 +329,15 @@ NVAPI int MessageLoop(void)
 #include <string.h>
 
 typedef GLXContext (*glXCreateContextAttribsARBProc)(Display*, GLXFBConfig, GLXContext, Bool, const int*);
+typedef void (*glXSwapIntervalEXTProc)(Display*, GLXDrawable, int);
+
 static glXCreateContextAttribsARBProc glXCreateContextAttribsARB = NULL;
+static glXSwapIntervalEXTProc glXSwapIntervalEXT = NULL;
+
+static void MakeCurrent(Window *window)
+{
+    glXMakeCurrent(global.display, window->window, window->context);
+}
 
 static Window* FindWindow(X11Window window)
 {
@@ -426,6 +444,7 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
 
     // I assume that every computer in todays age should support the required glx extension to create a modern opengl context
     glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc)glXGetProcAddress((const GLubyte*)"glXCreateContextAttribsARB");
+    glXSwapIntervalEXT = (glXSwapIntervalEXTProc)glXGetProcAddress((const GLubyte*)"glXSwapIntervalEXT");
 
     int contextAttribs[] = 
     {
@@ -442,6 +461,8 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
     if(!glXIsDirect(global.display, window->context)) return NULL;
 
     glXMakeCurrent(global.display, window->window, window->context);
+
+    glXSwapIntervalEXT(global.display, window->window, 1);
 
     LoadGLFunctions();
 
@@ -465,7 +486,8 @@ NVAPI int MessageLoop(void)
                 Window *window = FindWindow(event.xexpose.window);
                 if(!window) continue;
 
-                // XPutImage
+                //Update();
+                //glXSwapBuffers(global.display, window->window);
             }
             break;
         case ConfigureNotify:

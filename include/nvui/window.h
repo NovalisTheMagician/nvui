@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include "nvui.h"
 #include "element.h"
-#include "color.h"
 
 
 #ifdef _WIN32
