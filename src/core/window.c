@@ -51,8 +51,8 @@ static void Update(void)
     for(size_t i = 0; i < global.windowCount; ++i)
     {
         Window *window = global.windows[i];
-        glClearColor(window->windowColor.r, window->windowColor.g, window->windowColor.b, window->windowColor.a);
-        glClear(GL_COLOR_BUFFER_BIT);
+        //glClearColor(window->windowColor.r, window->windowColor.g, window->windowColor.b, window->windowColor.a);
+        //glClear(GL_COLOR_BUFFER_BIT);
         if(RectangleValid(window->updateRegion))
         {
             Painter painter;
@@ -233,7 +233,6 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
     if(!window) return NULL;
 
     window->e.window = window;
-    window->windowColor = (Color){ .r = 1, .b = 1, .a = 1 };
 
     global.windowCount++;
     global.windows = realloc(global.windows, sizeof(Window*) * global.windowCount);
@@ -314,7 +313,7 @@ NVAPI int MessageLoop(void)
     for(size_t i = 0; i < global.windowCount; ++i)
     {
         _DestroyWindow(global.windows[i]);
-        //free(global.windows[i]);
+        free(global.windows[i]);
     }
     free(global.windows);
 
@@ -380,7 +379,10 @@ NVAPI void Initialize(void)
 NVAPI Window* WindowCreate(const char *title, int width, int height)
 {
     Window *window = (Window*)ElementCreate(sizeof *window, NULL, 0, WindowMessage);
+    if(!window) return NULL;
+
     window->e.window = window;
+
     global.windowCount++;
     global.windows = realloc(global.windows, sizeof(Window*) * global.windowCount);
     global.windows[global.windowCount - 1] = window;

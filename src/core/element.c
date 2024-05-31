@@ -5,7 +5,7 @@
 
 NVAPI Element* ElementCreate(size_t bytes, Element *parent, uint32_t flags, MessageHandler messageClass)
 {
-    Element *element = calloc(1, sizeof *element);
+    Element *element = calloc(1, bytes);
     element->flags = flags;
     element->messageClass = messageClass;
 

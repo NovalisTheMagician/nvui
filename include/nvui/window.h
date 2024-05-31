@@ -28,7 +28,6 @@ typedef struct Window
     Element e;
     int width, height;
     Rectangle updateRegion;
-    Color windowColor;
 
 #ifdef _WIN32
     HWND hwnd;
