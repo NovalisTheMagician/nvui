@@ -14,7 +14,7 @@ NVAPI Element* ElementCreate(size_t bytes, Element *parent, uint32_t flags, Mess
         element->window = parent->window;
         element->parent = parent;
         parent->childCount++;
-        parent->children = realloc(parent->children, sizeof *parent->children * parent->childCount);
+        parent->children = realloc(parent->children, sizeof(Element*) * parent->childCount);
         parent->children[parent->childCount - 1] = element;
     }
 
