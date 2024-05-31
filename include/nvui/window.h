@@ -38,6 +38,8 @@ typedef struct Window
 #elif __linux__
     X11Window window;
     GLXContext context;
+    XVisualInfo *visual;
+    Colormap colormap;
 #endif
 } Window;
 

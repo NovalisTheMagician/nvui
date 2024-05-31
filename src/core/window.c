@@ -328,10 +328,19 @@ static bool LoadGLFunctions(void)
     return true;
 }
 
+static void DestroyWindow(Window *window)
+{
+    glXMakeCurrent(global.display, 0, NULL);
+    glXDestroyContext(global.display, window->context);
+    XFree(window->visual);
+    XFreeColormap(global.display, window->colormap);
+    XDestroyWindow(global.display, window->window);
+}
+
 NVAPI void Initialize(void)
 {
     global.display = XOpenDisplay(NULL);
-    global.visual = XDefaultVisual(global.display, 0);
+    //global.visual = XDefaultVisual(global.display, 0);
     global.windowClosedID = XInternAtom(global.display, "WM_DELETE_WINDOW", 0);
 }
 
@@ -368,23 +377,24 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
     GLXFBConfig *fbc = glXChooseFBConfig(global.display, screenId, glxAttribs, &fbcount);
     if(!fbc) return NULL;
 
-    XVisualInfo *visual = glXGetVisualFromFBConfig(global.display, fbc[0]);
-    if(!visual) return NULL;
+    window->visual = glXGetVisualFromFBConfig(global.display, fbc[0]);
+    if(!window->visual) return NULL;
 
     XSetWindowAttributes windowAttrib = {};
     windowAttrib.border_pixel = BlackPixel(global.display, screenId);
     windowAttrib.background_pixel = WhitePixel(global.display, screenId);
     windowAttrib.override_redirect = True;
-    windowAttrib.colormap = XCreateColormap(global.display, DefaultRootWindow(global.display), visual->visual, AllocNone);
+    windowAttrib.colormap = XCreateColormap(global.display, DefaultRootWindow(global.display), window->visual->visual, AllocNone);
+    window->colormap = windowAttrib.colormap;
 
-    window->window = XCreateWindow(global.display, DefaultRootWindow(global.display), 0, 0, width, height, 0, visual->depth, InputOutput, visual->visual, CWBackingPixel | CWColormap | CWBorderPixel | CWEventMask, &windowAttrib);
+    window->window = XCreateWindow(global.display, DefaultRootWindow(global.display), 0, 0, width, height, 0, window->visual->depth, InputOutput, window->visual->visual, CWBackingPixel | CWColormap | CWBorderPixel | CWEventMask, &windowAttrib);
     XStoreName(global.display, window->window, title);
     XSelectInput(global.display, window->window, SubstructureNotifyMask | ExposureMask | PointerMotionMask | ButtonPressMask | ButtonReleaseMask | KeyPressMask | KeyReleaseMask | StructureNotifyMask | EnterWindowMask | LeaveWindowMask | ButtonMotionMask | KeymapStateMask | FocusChangeMask | PropertyChangeMask);
 
-    XMapRaised(global.display, window->window);
     XSetWMProtocols(global.display, window->window, &global.windowClosedID, 1);
+    XMapRaised(global.display, window->window);
 
-    // I assume that every computer in todays age should support the required wgl extension to create a modern opengl context
+    // I assume that every computer in todays age should support the required glx extension to create a modern opengl context
     glXCreateContextAttribsARB = (glXCreateContextAttribsARBProc)glXGetProcAddress((const GLubyte*)"glXCreateContextAttribsARB");
 
     int contextAttribs[] = 
@@ -412,13 +422,11 @@ NVAPI int MessageLoop(void)
 {
     Update();
 
-    while(true)
+    bool isRunning = true;
+    while(isRunning)
     {
         XEvent event;
         XNextEvent(global.display, &event);
-
-        if(event.type == ClientMessage && (Atom)event.xclient.data.l[0] == global.windowClosedID)
-            return 0;
 
         switch(event.type)
         {
@@ -448,8 +456,32 @@ NVAPI int MessageLoop(void)
                 }
             }
             break;
+        case ClientMessage:
+            {
+                Window *window = FindWindow(event.xclient.window);
+                if(!window) continue;
+                if(event.xclient.data.l[0] == global.windowClosedID)
+                {
+                    isRunning = false;
+                }
+            }
+            break;
+        case DestroyNotify:
+            {
+                isRunning = false;
+            }
+            break;
         }
     }
+
+    for(size_t i = 0; i < global.windowCount; ++i)
+    {
+        DestroyWindow(global.windows[i]);
+        free(global.windows[i]);
+    }
+
+    XCloseDisplay(global.display);
+    return 0;
 }
 
 #endif

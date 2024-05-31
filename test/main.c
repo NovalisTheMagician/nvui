@@ -80,6 +80,11 @@ int main(int argc, char *argv[])
 {
     Initialize();
     Window *window = WindowCreate("Hello World!", 800, 600);
+	if(!window)
+	{
+		printf("failed to create window\n");
+		return 1;
+	}
     elementA = ElementCreate(sizeof(Element), &window->e, 0, ElementAMessage);
 	elementB = ElementCreate(sizeof(Element), elementA, 0, ElementBMessage);
 	elementC = ElementCreate(sizeof(Element), elementB, 0, ElementCMessage);
