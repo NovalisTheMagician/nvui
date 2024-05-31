@@ -81,10 +81,6 @@ static void RemoveAllElements(Element *element)
 
 #define WINDOW_CLASS "NVWINDOW"
 
-static PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB = NULL;
-static PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = NULL;
-static PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = NULL;
-
 static void MakeCurrent(Window *window)
 {
     wglMakeCurrent(window->hdc, window->hglrc);
