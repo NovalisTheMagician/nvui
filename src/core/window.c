@@ -52,7 +52,7 @@ static void Update(void)
     {
         Window *window = global.windows[i];
         //glClearColor(window->windowColor.r, window->windowColor.g, window->windowColor.b, window->windowColor.a);
-        //glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT);
         if(RectangleValid(window->updateRegion))
         {
             Painter painter;
@@ -183,13 +183,8 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
         break;
     case WM_PAINT:
         {
-            PAINTSTRUCT paint;
-		    BeginPaint(hwnd, &paint);
-
             //Update();
-            SwapBuffers(window->hdc);
-
-            EndPaint(hwnd, &paint);
+            //SwapBuffers(window->hdc);
         }
         break;
     default:
