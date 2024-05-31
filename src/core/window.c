@@ -1,15 +1,13 @@
 #include "nvui/window.h"
 
-#include <GL/gl.h>
-#include <GL/glx.h>
-#include <GL/glxext.h>
-#include <X11/X.h>
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
 #include <stdlib.h>
 
 #include "nvui/element.h"
 #include "nvui/painter.h"
+
+#ifdef _WIN32
+#include <glad2/gl.h>
+#endif
 
 #include <stdio.h>
 
@@ -68,6 +66,16 @@ static void Update(void)
                 //glScissor(0, 0, window->width, window->height);
         }
     }
+}
+
+static void RemoveAllElements(Element *element)
+{
+    for(size_t i = 0; i < element->childCount; ++i)
+        RemoveAllElements(element->children[i]);
+
+    if(element->childCount)
+        free(element->children);
+    free(element);
 }
 
 #ifdef _WIN32
@@ -191,6 +199,19 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
     return 0;
 }
 
+static void _DestroyWindow(Window *window)
+{
+    if(window->e.childCount)
+    {
+        RemoveAllElements(window->e.children[0]);
+        free(window->e.children);
+    }
+
+    wglMakeCurrent(NULL, NULL);
+    wglDeleteContext(window->hglrc);
+    DestroyWindow(window->hwnd);
+}
+
 NVAPI void Initialize(void)
 {
     LoadPreGLFunctions();
@@ -288,6 +309,12 @@ NVAPI int MessageLoop(void)
     {
         TranslateMessage(&message);
         DispatchMessageA(&message);
+    }
+
+    for(size_t i = 0; i < global.windowCount; ++i)
+    {
+        _DestroyWindow(global.windows[i]);
+        //free(global.windows[i]);
     }
 
     return message.wParam;

@@ -4,7 +4,6 @@
 #include "nvui.h"
 #include "element.h"
 #include "color.h"
-#include <glad2/gl.h>
 
 
 #ifdef _WIN32
@@ -19,6 +18,7 @@
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
 #include <X11/cursorfont.h>
+#include <glad2/gl.h>
 #include <GL/glx.h>
 #undef Window
 #endif
