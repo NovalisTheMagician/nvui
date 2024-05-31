@@ -5,7 +5,7 @@ LIBRARY_STATIC := lib$(LIBRARY).a
 
 BUILD_DIR := build
 SRC_DIR := src
-SRC_SUBDIRS := core widgets
+SRC_SUBDIRS := core widgets core/platform
 
 DEFINES := __USE_XOPEN _GNU_SOURCE NVEXPORT
 INC_DIRS := include
@@ -15,7 +15,7 @@ LIB_DIRS :=
 
 CC := gcc
 
-CCFLAGS := -Wall -std=c2x -Wstrict-prototypes
+CCFLAGS := -Wall -std=c2x -Wstrict-prototypes -fPIC
 
 LD := $(CC)
 LDFLAGS := -shared
@@ -33,12 +33,12 @@ else
 endif
 
 ifeq ($(OS),Windows_NT)
-    LIBS += user32 shell32 opengl32
+    LIBS += user32 gdi32 opengl32
     LIBRARY_NAME := $(LIBRARY).dll
     APPLICATION := $(APPLICATION).exe
     LIB_DIRS += $(LIB_GCC_PATH)
     INC_DIRS += $(INC_PATH)
-    LDFLAGS += -mwindows -Wl,--out-implib,$(LIBRARY_STATIC)
+    LDFLAGS += -mwindows 
 else
     LIBRARY_NAME := lib$(LIBRARY).so
     LDFLAGS += -fvisibility=hidden
@@ -72,7 +72,7 @@ $(BUILD_DIR):
 
 $(APPLICATION): $(LIBRARY_NAME) test/main.c
 	@echo "LD $@"
-	@$(LD) -o $@ -l$(LIBRARY) -Iinclude -L. -Wl,--subsystem,windows test/main.c
+	@$(LD) -o $@ -l$(LIBRARY) -Iinclude -L. -mconsole -Wl,-rpath,. -std=c2x -g test/main.c
 
 $(LIBRARY_STATIC): $(OBJS)
 	@echo "AR $@"
@@ -92,8 +92,8 @@ clean:
 	@rm -rf $(BUILD_DIR)
 	@echo "RM $(APPLICATION)"
 	@rm -f $(APPLICATION)
-	@echo "RM $(LIBRARY)"
-	@rm -f $(LIBRARY)
+	@echo "RM $(LIBRARY_NAME)"
+	@rm -f $(LIBRARY_NAME)
 	@echo "RM $(LIBRARY_STATIC)"
 	@rm -f $(LIBRARY_STATIC)
 

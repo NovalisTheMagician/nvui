@@ -4,9 +4,9 @@
 
 #ifdef _WIN32
     #ifdef NVEXPORT
-        #define NVAPI __attribute__((dllexport))
+        #define NVAPI __declspec(dllexport)
     #else
-        #define NVAPI __attribute__((dllimport))
+        #define NVAPI __declspec(dllimport)
     #endif
 #else
     #ifdef NVEXPORT
