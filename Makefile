@@ -25,6 +25,23 @@ ARFLAGS := rcs
 
 TESTFLAGS := -l$(LIBRARY) -Iinclude -L. -Wl,-rpath,. -std=c2x -g
 
+PLATFORM := UNKOWN
+
+ifeq ($(OS),Windows_NT)
+    PLATFORM := WINDOWS
+else
+    UNAME_S := $(shell uname -s)
+    ifeq ($(UNAME_S),Linux)
+        PLATFORM := LINUX
+    endif
+    ifeq ($(UNAME_S),Darwin)
+        PLATFORM := MACOS
+    endif
+    ifeq ($(UNAME_S),FreeBSD)
+        PLATFORM := BSD
+    endif
+endif
+
 ifeq ($(CONFIG),release)
     DEFINES += NDEBUG
     CCFLAGS += -O2
@@ -34,7 +51,7 @@ else
     CCFLAGS += -g
 endif
 
-ifeq ($(OS),Windows_NT)
+ifeq ($(PLATFORM),WINDOWS)
     LIBS += user32 gdi32 opengl32
     LIBRARY_NAME := $(LIBRARY).dll
     APPLICATION := $(APPLICATION).exe
@@ -42,17 +59,13 @@ ifeq ($(OS),Windows_NT)
     INC_DIRS += $(INC_PATH)
     LDFLAGS += -mwindows 
     TESTFLAGS += -mconsole
-else
+else 
     LIBRARY_NAME := lib$(LIBRARY).so
     LDFLAGS += -fvisibility=hidden
     UNAME_S := $(shell uname -s)
-    ifeq ($(UNAME_S),Linux)
+    ifeq ($(PLATFORM),LINUX)
         LIBS += GL
         DEFINES += 
-    endif
-    ifeq ($(UNAME_S),Darwin)
-    endif
-    ifeq ($(UNAME_S),FreeBSD)
     endif
 endif
 
@@ -61,18 +74,10 @@ LIB_FLAGS := $(addprefix -L,$(LIB_DIRS)) $(addprefix -l,$(LIBS))
 
 # SRCS := $(wildcard $(SRC_DIR)/*.c)
 SRCS := $(wildcard $(SRC_DIR)/*.c) $(foreach pat,$(SRC_SUBDIRS),$(wildcard $(SRC_DIR)/$(pat)/*.c)) src/glad/gl.c
-
-ifeq ($(OS),Windows_NT)
+ifeq ($(PLATFORM),WINDOWS)
     SRCS += src/glad/wgl.c
-else
-    UNAME_S := $(shell uname -s)
-    ifeq ($(UNAME_S),Linux)
-        SRCS += src/glad/glx.c
-    endif
-    ifeq ($(UNAME_S),Darwin)
-    endif
-    ifeq ($(UNAME_S),FreeBSD)
-    endif
+else ifeq ($(PLATFORM),LINUX)
+    SRCS += src/glad/glx.c
 endif
 OBJS := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SRCS))
 
