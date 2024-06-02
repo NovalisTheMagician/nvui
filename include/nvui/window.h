@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "nvui.h"
 #include "element.h"
+#include "gltypes.h"
 
 #ifdef _WIN32
 #define Rectangle W32Rectangle
@@ -21,13 +22,23 @@
 #undef Window
 #endif
 
+typedef struct GLData
+{
+    GLuint colorRb, depthRb, framebuffer;
+    GLuint shaderProgram, projectionLoc, tintLoc, textureLoc;
+    GLuint vertexFormat, vertexBuffer;
+    Vertex *mappedVertexBuffer;
+    GLuint whiteTexture;
+} GLData;
+
 typedef struct Window
 {
     Element e;
     int width, height;
     Rectangle updateRegion;
 
-    GLuint bufferCTex, bufferDTex, famebuffer;
+    GLData glData;
+    mat4s projection;
 
 #ifdef _WIN32
     HWND hwnd;
@@ -39,6 +50,7 @@ typedef struct Window
     GLXContext context;
     XVisualInfo *visual;
     Colormap colormap;
+    bool firstTimeLayout;
 #endif
 } Window;
 

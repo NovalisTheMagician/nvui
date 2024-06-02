@@ -93,7 +93,7 @@ $(BUILD_DIR):
 
 $(APPLICATION): $(LIBRARY_NAME) test/main.c
 	@echo "LD $@"
-	@$(LD) -o $@ $(TESTFLAGS) test/main.c
+	@$(LD) -o $@ $(TESTFLAGS) -I$(INC_PATH) test/main.c
 
 $(LIBRARY_STATIC): $(OBJS)
 	@echo "AR $@"

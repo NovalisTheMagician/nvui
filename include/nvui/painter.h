@@ -2,6 +2,7 @@
 
 #include "util.h"
 #include "color.h"
+#include "gltypes.h"
 
 #include "glad/gl.h"
 
@@ -28,7 +29,8 @@ typedef struct Painter
     StrokeStyle strokeStyle;
     FillStyle fillStyle;
 
-    GLuint framebuffer;
+    GLuint framebuffer, textureLoc, tintLoc, defaultTexture;
+    Vertex *vertexMap;
 } Painter;
 
 NVAPI void PainterDrawLine(Painter *painter, int x1, int y1, int x2, int y2);

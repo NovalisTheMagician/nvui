@@ -6,34 +6,163 @@
 #include "nvui/painter.h"
 
 #include <stdio.h>
+#include <wingdi.h>
+
+#define WINDOW_MIN_WIDTH 200
+#define WINDOW_MIN_HEIGHT 200
+#define BUFFER_SIZE 1024 * 64 //64 kilobytes of vertexbuffer allocated
 
 GlobalState global = {};
 static bool glFuncsLoaded = false;
 
+static bool CompileShader(const char *shaderScr, GLuint *shader)
+{
+    int success;
+    char infoLog[512];
+
+    glShaderSource(*shader, 1, &shaderScr, NULL);
+    glCompileShader(*shader);
+    glGetShaderiv(*shader, GL_COMPILE_STATUS, &success);
+    if(!success)
+    {
+        glGetShaderInfoLog(*shader, sizeof infoLog, NULL, infoLog);
+        printf("Failed to compile Shader: %s\n", infoLog);
+        return false;
+    };
+
+    return true;
+}
+
+static bool LinkProgram(GLuint vertexShader, GLuint fragmentShader, GLuint *program)
+{
+    int success;
+    char infoLog[512];
+
+    glAttachShader(*program, vertexShader);
+    glAttachShader(*program, fragmentShader);
+    glLinkProgram(*program);
+    glGetProgramiv(*program, GL_LINK_STATUS, &success);
+    if(!success)
+    {
+        glGetProgramInfoLog(*program, sizeof infoLog, NULL, infoLog);
+        printf("Failed to link Program: %s\n", infoLog);
+        return false;
+    }
+
+    return true;
+}
+
+static bool InitGLData(Window *window)
+{
+    const char *vertShaderSrc = 
+        "#version 460 core\n"
+        "layout(location=0) in vec2 inPosition;\n"
+        "layout(location=1) in vec4 inColor;\n"
+        "layout(location=3) in vec2 inTexCoords;\n"
+        "out vec4 outColor;\n"
+        "out vec2 outTexCoords;\n"
+        "uniform mat4 viewProj;\n"
+        "uniform vec2 coordOffset;\n"
+        "void main() {\n"
+        "   gl_Position = viewProj * vec4(inPosition, 0, 1);\n"
+        "   outColor = inColor;\n"
+        "   outTexCoords = inTexCoords;\n"
+        "}\n";
+
+    const char *fragShaderSrc = 
+        "#version 460 core\n"
+        "in vec4 outColor;\n"
+        "in vec2 outTexCoords;\n"
+        "out vec4 fragColor;\n"
+        "uniform sampler2D tex;\n"
+        "uniform vec4 tint;\n"
+        "void main() {\n"
+        "   fragColor = outColor * texture(tex, outTexCoords) * tint;\n"
+        "}\n";
+
+    GLuint vertShader = glCreateShader(GL_VERTEX_SHADER);
+    if(!CompileShader(vertShaderSrc, &vertShader))
+        return false;
+
+    GLuint fragShader = glCreateShader(GL_FRAGMENT_SHADER);
+    if(!CompileShader(fragShaderSrc, &fragShader))
+        return false;
+
+    GLuint program = glCreateProgram();
+    if(!LinkProgram(vertShader, fragShader, &program))
+        return false;
+
+    glDeleteShader(vertShader);
+    glDeleteShader(fragShader);
+
+    window->glData.shaderProgram = program;
+    window->glData.projectionLoc = glGetUniformLocation(program, "viewProj");
+    window->glData.tintLoc = glGetUniformLocation(program, "tint");
+    window->glData.textureLoc = glGetUniformLocation(program, "tex");
+
+    const uint8_t whiteBytes[] = { 255, 255, 255, 255 };
+    glCreateTextures(GL_TEXTURE_2D, 1, &window->glData.whiteTexture);
+    glTextureStorage2D(window->glData.whiteTexture, 1, GL_RGBA8, 1, 1);
+    glTextureParameteri(window->glData.whiteTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(window->glData.whiteTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureSubImage2D(window->glData.whiteTexture, 0, 0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, whiteBytes);
+
+    const GLbitfield 
+	mapping_flags = GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT,
+	storage_flags = GL_DYNAMIC_STORAGE_BIT | mapping_flags;
+    const size_t bufferSize = BUFFER_SIZE * sizeof(struct Vertex);
+
+    glCreateBuffers(1, &window->glData.vertexBuffer);
+    glNamedBufferStorage(window->glData.vertexBuffer, bufferSize, NULL, storage_flags);
+    window->glData.mappedVertexBuffer = glMapNamedBufferRange(window->glData.vertexBuffer, 0, bufferSize, mapping_flags);
+
+    glCreateVertexArrays(1, &window->glData.vertexFormat);
+    glEnableVertexArrayAttrib(window->glData.vertexFormat, 0);
+    glEnableVertexArrayAttrib(window->glData.vertexFormat, 1);
+    glEnableVertexArrayAttrib(window->glData.vertexFormat, 2);
+    glVertexArrayAttribFormat(window->glData.vertexFormat, 0, 2, GL_FLOAT, GL_FALSE, offsetof(Vertex, position));
+    glVertexArrayAttribFormat(window->glData.vertexFormat, 1, 2, GL_FLOAT, GL_FALSE, offsetof(Vertex, texcoord));
+    glVertexArrayAttribFormat(window->glData.vertexFormat, 2, 4, GL_FLOAT, GL_FALSE, offsetof(Vertex, color));
+    glVertexArrayAttribBinding(window->glData.vertexFormat, 0, 0);
+    glVertexArrayAttribBinding(window->glData.vertexFormat, 1, 0);
+    glVertexArrayAttribBinding(window->glData.vertexFormat, 2, 0);
+    glVertexArrayVertexBuffer(window->glData.vertexFormat, 0, window->glData.vertexBuffer, 0, sizeof(Vertex));
+
+    return true;
+}
+
+static void DestroyGLData(Window *window)
+{
+    glDeleteFramebuffers(1, &window->glData.framebuffer);
+    GLuint renderbuffers[] = { window->glData.colorRb, window->glData.depthRb };
+    glDeleteRenderbuffers(2, renderbuffers);
+    glDeleteTextures(1, &window->glData.whiteTexture);
+    glDeleteProgram(window->glData.shaderProgram);
+    glUnmapNamedBuffer(window->glData.vertexBuffer);
+    glDeleteBuffers(1, &window->glData.vertexBuffer);
+    glDeleteVertexArrays(1, &window->glData.vertexFormat);
+}
+
 static void ResizeTextures(Window *window)
 {
-    GLuint textures[] = { window->bufferCTex, window->bufferDTex };
-    glDeleteTextures(2, textures);
+    GLuint renderbuffers[] = { window->glData.colorRb, window->glData.depthRb };
+    glDeleteRenderbuffers(2, renderbuffers);
 
-    glCreateTextures(GL_TEXTURE_2D, 1, &window->bufferCTex);
-    glCreateTextures(GL_TEXTURE_2D, 1, &window->bufferDTex);
+    glCreateRenderbuffers(1, &window->glData.colorRb);
+    glCreateRenderbuffers(1, &window->glData.depthRb);
 
-    glTextureStorage2D(window->bufferCTex, 1, GL_RGBA8, window->width, window->height);
-    glTextureParameteri(window->bufferCTex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(window->bufferCTex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glNamedRenderbufferStorage(window->glData.colorRb, GL_RGBA8, window->width, window->height);
 
-    glTextureStorage2D(window->bufferDTex, 1, GL_DEPTH_COMPONENT24, window->width, window->height);
-    glTextureParameteri(window->bufferDTex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(window->bufferDTex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glNamedRenderbufferStorage(window->glData.depthRb, GL_DEPTH_COMPONENT24, window->width, window->height);
 
-    if(!window->famebuffer)
-        glCreateFramebuffers(1, &window->famebuffer);
-    glNamedFramebufferTexture(window->famebuffer, GL_COLOR_ATTACHMENT0, window->bufferCTex, 0);
-    glNamedFramebufferTexture(window->famebuffer, GL_DEPTH_ATTACHMENT, window->bufferDTex, 0);
+    if(!window->glData.framebuffer)
+        glCreateFramebuffers(1, &window->glData.framebuffer);
+    glNamedFramebufferRenderbuffer(window->glData.framebuffer, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, window->glData.colorRb);
+    glNamedFramebufferRenderbuffer(window->glData.framebuffer, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, window->glData.depthRb);
 
-    glBindFramebuffer(GL_FRAMEBUFFER, window->famebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, window->glData.framebuffer);
     float color[] = { 0, 0, 0, 1 };
-    glClearNamedFramebufferfv(window->famebuffer, GL_COLOR, 0, color);
+    glClearNamedFramebufferfv(window->glData.framebuffer, GL_COLOR, 0, color);
 }
 
 static int WindowMessage(Element *element, Message message, int di, void *dp)
@@ -41,6 +170,7 @@ static int WindowMessage(Element *element, Message message, int di, void *dp)
     if(message == MSG_LAYOUT)
     {
         glViewport(0, 0, element->window->width, element->window->height);
+        element->window->projection = glms_ortho(0, element->window->width, 0, element->window->height, -1, 1);
         ResizeTextures(element->window);
         if(element->childCount)
         {
@@ -58,8 +188,22 @@ static void ElementPaint(Element *element, Painter *painter)
     Rectangle clip = RectangleIntersection(element->clip, painter->clip);
     if(!RectangleValid(clip)) return;
 
+    const GLData gldata = element->window->glData;
+
     painter->clip = clip;
     glScissor(clip.l, clip.t, clip.r - clip.l, clip.b - clip.t);
+    glBindVertexArray(gldata.vertexFormat);
+    glUseProgram(gldata.shaderProgram);
+    glUniformMatrix4fv(gldata.projectionLoc, 1, GL_FALSE, (float*)&element->window->projection);
+    glBindTextureUnit(0, gldata.whiteTexture);
+    glUniform1i(gldata.textureLoc, 0);
+    glUniform4fv(gldata.tintLoc, 1, (float[]){ 1, 1, 1, 1 });
+
+    painter->vertexMap = gldata.mappedVertexBuffer;
+    painter->textureLoc = gldata.textureLoc;
+    painter->tintLoc = gldata.tintLoc;
+    painter->defaultTexture = gldata.whiteTexture;
+
     ElementMessage(element, MSG_PAINT, 0, painter);
 
     for(size_t i = 0; i < element->childCount; ++i)
@@ -71,7 +215,7 @@ static void ElementPaint(Element *element, Painter *painter)
 
 static void MakeCurrent(Window *window);
 
-static void Update(void)
+static void Update()
 {
     for(size_t i = 0; i < global.windowCount; ++i)
     {
@@ -83,7 +227,7 @@ static void Update(void)
             painter.width = window->width;
             painter.height = window->height;
             painter.clip = RectangleIntersection((Rectangle){ .r = window->width, .b = window->height }, window->updateRegion);
-            painter.framebuffer = window->famebuffer;
+            painter.framebuffer = window->glData.framebuffer;
             ElementPaint(&window->e, &painter);
             WindowEndPaint(window, &painter);
             window->updateRegion = (Rectangle){ 0 };
@@ -101,49 +245,46 @@ static void RemoveAllElements(Element *element)
     free(element);
 }
 
-static const char* GetGLSource(GLenum source)
-{
-    switch (source)
-    {
-    case GL_DEBUG_SOURCE_API: return "API";
-    case GL_DEBUG_SOURCE_WINDOW_SYSTEM: return "WINDOW SYSTEM";
-    case GL_DEBUG_SOURCE_SHADER_COMPILER: return "SHADER COMPILER";
-    case GL_DEBUG_SOURCE_THIRD_PARTY: return "THIRD PARTY";
-    case GL_DEBUG_SOURCE_APPLICATION: return "APPLICATION";
-    case GL_DEBUG_SOURCE_OTHER: return "OTHER";
-    default: return "";
-    }
-}
-
-static const char* GetGLType(GLenum type)
-{
-    switch (type)
-    {
-    case GL_DEBUG_TYPE_ERROR: return "ERROR";
-    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: return "DEPRECATED_BEHAVIOR";
-    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: return "UNDEFINED_BEHAVIOR";
-    case GL_DEBUG_TYPE_PORTABILITY: return "PORTABILITY";
-    case GL_DEBUG_TYPE_PERFORMANCE: return "PERFORMANCE";
-    case GL_DEBUG_TYPE_MARKER: return "MARKER";
-    case GL_DEBUG_TYPE_OTHER: return "OTHER";
-    default: return "";
-    }
-}
-
-static const char* GetGLSeverity(GLenum severity)
-{
-    switch (severity) {
-    case GL_DEBUG_SEVERITY_NOTIFICATION: return "NOTIFICATION";
-    case GL_DEBUG_SEVERITY_LOW: return "LOW";
-    case GL_DEBUG_SEVERITY_MEDIUM: return "MEDIUM";
-    case GL_DEBUG_SEVERITY_HIGH: return "HIGH";
-    default: return "";
-    }
-}
-
 static void GLDebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *user)
 {
-    printf("%s, %s, %s, %d: %s\n", GetGLSource(source), GetGLType(type), GetGLSeverity(severity), id, message);
+    const char *src_str = ({
+        char *v = "";
+		switch (source) {
+		case GL_DEBUG_SOURCE_API: v = "API"; break;
+		case GL_DEBUG_SOURCE_WINDOW_SYSTEM: v = "WINDOW SYSTEM"; break;
+		case GL_DEBUG_SOURCE_SHADER_COMPILER: v = "SHADER COMPILER"; break;
+		case GL_DEBUG_SOURCE_THIRD_PARTY: v = "THIRD PARTY"; break;
+		case GL_DEBUG_SOURCE_APPLICATION: v = "APPLICATION"; break;
+		case GL_DEBUG_SOURCE_OTHER: v = "OTHER"; break;
+		}
+        v;
+	});
+
+	const char *type_str = ({
+        char *v = "";
+		switch (type) {
+		case GL_DEBUG_TYPE_ERROR: v = "ERROR"; break;
+		case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: v = "DEPRECATED_BEHAVIOR"; break;
+		case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: v = "UNDEFINED_BEHAVIOR"; break;
+		case GL_DEBUG_TYPE_PORTABILITY: v = "PORTABILITY"; break;
+		case GL_DEBUG_TYPE_PERFORMANCE: v = "PERFORMANCE"; break;
+		case GL_DEBUG_TYPE_MARKER: v = "MARKER"; break;
+		case GL_DEBUG_TYPE_OTHER: v = "OTHER"; break;
+		}
+        v;
+	});
+
+	const char *severity_str = ({
+        char *v = "";
+		switch (severity) {
+		case GL_DEBUG_SEVERITY_NOTIFICATION: v = "NOTIFICATION"; break;
+		case GL_DEBUG_SEVERITY_LOW: v = "LOW"; break;
+		case GL_DEBUG_SEVERITY_MEDIUM: v = "MEDIUM"; break;
+		case GL_DEBUG_SEVERITY_HIGH: v = "HIGH"; break;
+		}
+        v;
+	});
+    printf("%s, %s, %s, %u: %s\n", src_str, type_str, severity_str, id, message);
 }
 
 #ifdef _WIN32
@@ -248,23 +389,33 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
         {
             RECT client;
             GetClientRect(hwnd, &client);
-            window->width = client.right;
-            window->height = client.bottom;
-            window->e.bounds = (Rectangle){ .r = window->width, .b = window->height };
-            window->e.clip = (Rectangle){ .r = window->width, .b = window->height };
-            ElementMessage(&window->e, MSG_LAYOUT, 0, NULL);
-            Update();
+            if(client.right > 0 && client.bottom > 0)
+            {
+                window->width = client.right;
+                window->height = client.bottom;
+                window->e.bounds = (Rectangle){ .r = window->width, .b = window->height };
+                window->e.clip = (Rectangle){ .r = window->width, .b = window->height };
+                ElementMessage(&window->e, MSG_LAYOUT, 0, NULL);
+                Update();
+            }
         }
         break;
     case WM_PAINT:
         {
+            wglMakeCurrent(window->hdc, window->hglrc);
             glDisable(GL_SCISSOR_TEST);
             glClearNamedFramebufferfv(0, GL_COLOR, 0, (float[]){ 0, 1, 0, 1 });
-            glBlitNamedFramebuffer(window->famebuffer, 0, 0, 0, window->width, window->height, 0, 0, window->width, window->height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+            glBlitNamedFramebuffer(window->glData.framebuffer, 0, 0, 0, window->width, window->height, 0, 0, window->width, window->height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
             SwapBuffers(window->hdc);
             glEnable(GL_SCISSOR_TEST);
         }
         break;
+    case WM_GETMINMAXINFO:
+        {
+            MINMAXINFO *mmi = (MINMAXINFO*)lParam;
+            mmi->ptMinTrackSize.x = WINDOW_MIN_WIDTH;
+            mmi->ptMinTrackSize.y = WINDOW_MIN_HEIGHT;
+        }
     default:
         return DefWindowProcA(hwnd, message, wParam, lParam);
     }
@@ -274,11 +425,14 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
 
 static void _DestroyWindow(Window *window)
 {
+    wglMakeCurrent(window->hdc, window->hglrc);
     if(window->e.childCount)
     {
         RemoveAllElements(window->e.children[0]);
         free(window->e.children);
     }
+
+    DestroyGLData(window);
 
     wglMakeCurrent(NULL, NULL);
     wglDeleteContext(window->hglrc);
@@ -295,6 +449,7 @@ NVAPI void Initialize(void)
         .lpfnWndProc = WndProc,
         .hCursor = LoadCursorA(NULL, IDC_ARROW),
         .hIcon = LoadIconA(NULL, IDI_APPLICATION),
+        .style = CS_OWNDC,
         .lpszClassName = WINDOW_CLASS
     };
     RegisterClassExA(&windowClass);
@@ -366,6 +521,8 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
     wglSwapIntervalEXT(1);
 
     LoadGLFunctions();
+
+    InitGLData(window);
 
     ShowWindow(window->hwnd, SW_SHOW);
     PostMessageA(window->hwnd, WM_SIZE, 0, 0);
@@ -444,6 +601,8 @@ static void DestroyWindow(Window *window)
         free(window->e.children);
     }
 
+    DestroyGLData(window);
+
     glXMakeCurrent(global.display, 0, NULL);
     glXDestroyContext(global.display, window->context);
     XFree(window->visual);
@@ -456,8 +615,6 @@ NVAPI void Initialize(void)
     global.display = XOpenDisplay(NULL);
     global.windowClosedID = XInternAtom(global.display, "WM_DELETE_WINDOW", 0);
 }
-
-static bool firstTimeLayout;
 
 NVAPI Window* WindowCreate(const char *title, int width, int height)
 {
@@ -477,10 +634,6 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
 
     // I assume that every computer in todays age should support the required glx extension to create a modern opengl context
     gladLoaderLoadGLX(global.display, screenId);
-
-    GLint majorGLX, minorGLX = 0;
-    glXQueryVersion(global.display, &majorGLX, &minorGLX);
-    if(majorGLX <= 1 && minorGLX <= 2) return NULL;
 
     GLint glxAttribs[] =
     {
@@ -518,6 +671,13 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
     XSetWMProtocols(global.display, window->window, &global.windowClosedID, 1);
     XMapRaised(global.display, window->window);
 
+    XSizeHints* sizeHints = XAllocSizeHints();
+    sizeHints->flags = PMinSize;
+    sizeHints->min_width = WINDOW_MIN_WIDTH;
+    sizeHints->min_height = WINDOW_MIN_HEIGHT;
+    XSetWMNormalHints(global.display, window->window, sizeHints);
+    XFree(sizeHints);
+
     int contextAttribs[] = 
     {
         GLX_CONTEXT_MAJOR_VERSION_ARB, 4,
@@ -539,7 +699,9 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
 
     LoadGLFunctions();
 
-    firstTimeLayout = true;
+    InitGLData(window);
+
+    window->firstTimeLayout = true;
 
     return window;
 }
@@ -561,7 +723,7 @@ NVAPI int MessageLoop(void)
                 Window *window = FindWindow(event.xexpose.window);
                 if(!window) continue;
 
-                if(firstTimeLayout)
+                if(window->firstTimeLayout)
                 {
                     window->e.bounds = (Rectangle){ .r = window->width, .b = window->height };
                     window->e.clip = (Rectangle){ .r = window->width, .b = window->height };
@@ -569,12 +731,13 @@ NVAPI int MessageLoop(void)
                     ElementMessage(&window->e, MSG_LAYOUT, 0, NULL);
                     Update();
 
-                    firstTimeLayout = false;
+                    window->firstTimeLayout = false;
                 }
 
+                glxMakeCurrent(global.display, window->window, window->context);
                 glDisable(GL_SCISSOR_TEST);
                 glClearNamedFramebufferfv(0, GL_COLOR, 0, (float[]){ 0, 1, 0, 1 });
-                glBlitNamedFramebuffer(window->famebuffer, 0, 0, 0, window->width, window->height, 0, 0, window->width, window->height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+                glBlitNamedFramebuffer(window->glData.framebuffer, 0, 0, 0, window->width, window->height, 0, 0, window->width, window->height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
                 glXSwapBuffers(global.display, window->window);
                 glEnable(GL_SCISSOR_TEST);
             }
