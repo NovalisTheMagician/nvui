@@ -230,8 +230,7 @@ static bool LoadGLFunctions(void)
 
 static void WindowEndPaint(Window *window, Painter *painter)
 {
-    //glBlitNamedFramebuffer(window->famebuffer, 0, 0, 0, window->width, window->height, 0, 0, window->width, window->height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
-    //SwapBuffers(window->hdc);
+    
 }
 
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -261,8 +260,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
         break;
     case WM_PAINT:
         {
-            //Update();
-            //SwapBuffers(window->hdc);
+            glScissor(0, 0, window->width, window->height);
             glBlitNamedFramebuffer(window->famebuffer, 0, 0, 0, window->width, window->height, 0, 0, window->width, window->height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
             SwapBuffers(window->hdc);
         }
@@ -415,8 +413,7 @@ static Window* FindWindow(X11Window window)
 
 static void WindowEndPaint(Window *window, Painter *painter)
 {
-    glBlitNamedFramebuffer(window->famebuffer, 0, 0, 0, window->width, window->height, 0, 0, window->width, window->height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
-    glXSwapBuffers(global.display, window->window);
+    
 }
 
 static bool LoadGLFunctions(void)
@@ -558,8 +555,9 @@ NVAPI int MessageLoop(void)
                 Window *window = FindWindow(event.xexpose.window);
                 if(!window) continue;
 
-                //Update();
-                //glXSwapBuffers(global.display, window->window);
+                glScissor(0, 0, window->width, window->height);
+                glBlitNamedFramebuffer(window->famebuffer, 0, 0, 0, window->width, window->height, 0, 0, window->width, window->height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+                glXSwapBuffers(global.display, window->window);
             }
             break;
         case ConfigureNotify:
