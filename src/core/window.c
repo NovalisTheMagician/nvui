@@ -87,8 +87,6 @@ static void Update(void)
             ElementPaint(&window->e, &painter);
             WindowEndPaint(window, &painter);
             window->updateRegion = (Rectangle){ 0 };
-            //if(glFuncsLoaded)
-                //glScissor(0, 0, window->width, window->height);
         }
     }
 }
@@ -260,9 +258,11 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
         break;
     case WM_PAINT:
         {
-            glScissor(0, 0, window->width, window->height);
+            glDisable(GL_SCISSOR_TEST);
+            glClearNamedFramebufferfv(0, GL_COLOR, 0, (float[]){ 0, 1, 0, 1 });
             glBlitNamedFramebuffer(window->famebuffer, 0, 0, 0, window->width, window->height, 0, 0, window->width, window->height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
             SwapBuffers(window->hdc);
+            glEnable(GL_SCISSOR_TEST);
         }
         break;
     default:
@@ -413,7 +413,6 @@ static Window* FindWindow(X11Window window)
 
 static void WindowEndPaint(Window *window, Painter *painter)
 {
-    
 }
 
 static bool LoadGLFunctions(void)
@@ -458,12 +457,17 @@ NVAPI void Initialize(void)
     global.windowClosedID = XInternAtom(global.display, "WM_DELETE_WINDOW", 0);
 }
 
+static bool firstTimeLayout;
+
 NVAPI Window* WindowCreate(const char *title, int width, int height)
 {
     Window *window = (Window*)ElementCreate(sizeof *window, NULL, 0, WindowMessage);
     if(!window) return NULL;
 
     window->e.window = window;
+
+    window->width = width;
+    window->height = height;
 
     global.windowCount++;
     global.windows = realloc(global.windows, sizeof(Window*) * global.windowCount);
@@ -535,6 +539,8 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
 
     LoadGLFunctions();
 
+    firstTimeLayout = true;
+
     return window;
 }
 
@@ -555,9 +561,22 @@ NVAPI int MessageLoop(void)
                 Window *window = FindWindow(event.xexpose.window);
                 if(!window) continue;
 
-                glScissor(0, 0, window->width, window->height);
+                if(firstTimeLayout)
+                {
+                    window->e.bounds = (Rectangle){ .r = window->width, .b = window->height };
+                    window->e.clip = (Rectangle){ .r = window->width, .b = window->height };
+
+                    ElementMessage(&window->e, MSG_LAYOUT, 0, NULL);
+                    Update();
+
+                    firstTimeLayout = false;
+                }
+
+                glDisable(GL_SCISSOR_TEST);
+                glClearNamedFramebufferfv(0, GL_COLOR, 0, (float[]){ 0, 1, 0, 1 });
                 glBlitNamedFramebuffer(window->famebuffer, 0, 0, 0, window->width, window->height, 0, 0, window->width, window->height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
                 glXSwapBuffers(global.display, window->window);
+                glEnable(GL_SCISSOR_TEST);
             }
             break;
         case ConfigureNotify:

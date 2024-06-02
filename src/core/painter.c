@@ -19,7 +19,5 @@ NVAPI void PainterFillRect(Painter *painter, Rectangle rectangle)
 
 NVAPI void PainterClear(Painter *painter)
 {
-    //glClearColor(painter->backColor.r, painter->backColor.g, painter->backColor.b, painter->backColor.a);
-    //glClear(GL_COLOR_BUFFER_BIT);
     glClearNamedFramebufferfv(painter->framebuffer, GL_COLOR, 0, (float*)&painter->backColor);
 }
