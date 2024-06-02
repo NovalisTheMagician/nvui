@@ -10,11 +10,38 @@
 GlobalState global = {};
 static bool glFuncsLoaded = false;
 
+static void ResizeTextures(Window *window)
+{
+    GLuint textures[] = { window->bufferCTex, window->bufferDTex };
+    glDeleteTextures(2, textures);
+
+    glCreateTextures(GL_TEXTURE_2D, 1, &window->bufferCTex);
+    glCreateTextures(GL_TEXTURE_2D, 1, &window->bufferDTex);
+
+    glTextureStorage2D(window->bufferCTex, 1, GL_RGBA8, window->width, window->height);
+    glTextureParameteri(window->bufferCTex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(window->bufferCTex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glTextureStorage2D(window->bufferDTex, 1, GL_DEPTH_COMPONENT24, window->width, window->height);
+    glTextureParameteri(window->bufferDTex, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(window->bufferDTex, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    if(!window->famebuffer)
+        glCreateFramebuffers(1, &window->famebuffer);
+    glNamedFramebufferTexture(window->famebuffer, GL_COLOR_ATTACHMENT0, window->bufferCTex, 0);
+    glNamedFramebufferTexture(window->famebuffer, GL_DEPTH_ATTACHMENT, window->bufferDTex, 0);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, window->famebuffer);
+    float color[] = { 0, 0, 0, 1 };
+    glClearNamedFramebufferfv(window->famebuffer, GL_COLOR, 0, color);
+}
+
 static int WindowMessage(Element *element, Message message, int di, void *dp)
 {
     if(message == MSG_LAYOUT)
     {
         glViewport(0, 0, element->window->width, element->window->height);
+        ResizeTextures(element->window);
         if(element->childCount)
         {
             ElementMove(element->children[0], element->bounds, false);
@@ -50,14 +77,13 @@ static void Update(void)
     {
         Window *window = global.windows[i];
         MakeCurrent(window);
-        //glClearColor(window->windowColor.r, window->windowColor.g, window->windowColor.b, window->windowColor.a);
-        //glClear(GL_COLOR_BUFFER_BIT);
         if(RectangleValid(window->updateRegion))
         {
             Painter painter;
             painter.width = window->width;
             painter.height = window->height;
             painter.clip = RectangleIntersection((Rectangle){ .r = window->width, .b = window->height }, window->updateRegion);
+            painter.framebuffer = window->famebuffer;
             ElementPaint(&window->e, &painter);
             WindowEndPaint(window, &painter);
             window->updateRegion = (Rectangle){ 0 };
@@ -77,8 +103,52 @@ static void RemoveAllElements(Element *element)
     free(element);
 }
 
-#ifdef _WIN32
+static const char* GetGLSource(GLenum source)
+{
+    switch (source)
+    {
+    case GL_DEBUG_SOURCE_API: return "API";
+    case GL_DEBUG_SOURCE_WINDOW_SYSTEM: return "WINDOW SYSTEM";
+    case GL_DEBUG_SOURCE_SHADER_COMPILER: return "SHADER COMPILER";
+    case GL_DEBUG_SOURCE_THIRD_PARTY: return "THIRD PARTY";
+    case GL_DEBUG_SOURCE_APPLICATION: return "APPLICATION";
+    case GL_DEBUG_SOURCE_OTHER: return "OTHER";
+    default: return "";
+    }
+}
 
+static const char* GetGLType(GLenum type)
+{
+    switch (type)
+    {
+    case GL_DEBUG_TYPE_ERROR: return "ERROR";
+    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: return "DEPRECATED_BEHAVIOR";
+    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: return "UNDEFINED_BEHAVIOR";
+    case GL_DEBUG_TYPE_PORTABILITY: return "PORTABILITY";
+    case GL_DEBUG_TYPE_PERFORMANCE: return "PERFORMANCE";
+    case GL_DEBUG_TYPE_MARKER: return "MARKER";
+    case GL_DEBUG_TYPE_OTHER: return "OTHER";
+    default: return "";
+    }
+}
+
+static const char* GetGLSeverity(GLenum severity)
+{
+    switch (severity) {
+    case GL_DEBUG_SEVERITY_NOTIFICATION: return "NOTIFICATION";
+    case GL_DEBUG_SEVERITY_LOW: return "LOW";
+    case GL_DEBUG_SEVERITY_MEDIUM: return "MEDIUM";
+    case GL_DEBUG_SEVERITY_HIGH: return "HIGH";
+    default: return "";
+    }
+}
+
+static void GLDebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *user)
+{
+    printf("%s, %s, %s, %d: %s\n", GetGLSource(source), GetGLType(type), GetGLSeverity(severity), id, message);
+}
+
+#ifdef _WIN32
 #define WINDOW_CLASS "NVWINDOW"
 
 static void MakeCurrent(Window *window)
@@ -123,6 +193,12 @@ static bool LoadPreGLFunctions(void)
     // I assume that every computer in todays age should support the required wgl extension to create a modern opengl context
     gladLoaderLoadWGL(dc);
 
+    if(!GLAD_WGL_ARB_create_context || !GLAD_WGL_ARB_create_context_profile || !GLAD_WGL_ARB_pixel_format || !GLAD_WGL_EXT_swap_control)
+    {
+        fprintf(stderr, "This system does not support required wgl extensions\n");
+        return false;
+    }
+
     wglMakeCurrent(NULL, NULL);
     wglDeleteContext(rc);
     ReleaseDC(dummy, dc);
@@ -142,12 +218,20 @@ static bool LoadGLFunctions(void)
 
     glEnable(GL_SCISSOR_TEST);
 
+#ifdef _DEBUG
+    glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+    glDebugMessageCallback(GLDebugCallback, NULL);
+    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
+#endif
+
     return true;
 }
 
 static void WindowEndPaint(Window *window, Painter *painter)
 {
-    SwapBuffers(window->hdc);
+    //glBlitNamedFramebuffer(window->famebuffer, 0, 0, 0, window->width, window->height, 0, 0, window->width, window->height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+    //SwapBuffers(window->hdc);
 }
 
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -179,6 +263,8 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
         {
             //Update();
             //SwapBuffers(window->hdc);
+            glBlitNamedFramebuffer(window->famebuffer, 0, 0, 0, window->width, window->height, 0, 0, window->width, window->height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+            SwapBuffers(window->hdc);
         }
         break;
     default:
@@ -329,6 +415,7 @@ static Window* FindWindow(X11Window window)
 
 static void WindowEndPaint(Window *window, Painter *painter)
 {
+    glBlitNamedFramebuffer(window->famebuffer, 0, 0, 0, window->width, window->height, 0, 0, window->width, window->height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
     glXSwapBuffers(global.display, window->window);
 }
 
@@ -342,6 +429,13 @@ static bool LoadGLFunctions(void)
     }
 
     glEnable(GL_SCISSOR_TEST);
+
+#ifdef _DEBUG
+    glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+    glDebugMessageCallback(GLDebugCallback, NULL);
+    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
+#endif
 
     return true;
 }

@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
 	elementC = ElementCreate(sizeof(Element), elementB, 0, ElementCMessage);
 	elementD = ElementCreate(sizeof(Element), elementB, 0, ElementDMessage);
 
-	Window *w2 = WindowCreate("Hah", 300, 300);
-	Element *elementE = ElementCreate(sizeof *elementE, &w2->e, 0, ElementEMessage);
+	//Window *w2 = WindowCreate("Hah", 300, 300);
+	//Element *elementE = ElementCreate(sizeof *elementE, &w2->e, 0, ElementEMessage);
     return MessageLoop();
 }

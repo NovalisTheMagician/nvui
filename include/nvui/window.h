@@ -27,6 +27,8 @@ typedef struct Window
     int width, height;
     Rectangle updateRegion;
 
+    GLuint bufferCTex, bufferDTex, famebuffer;
+
 #ifdef _WIN32
     HWND hwnd;
     HGLRC hglrc;

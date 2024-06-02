@@ -3,6 +3,8 @@
 #include "util.h"
 #include "color.h"
 
+#include "glad/gl.h"
+
 typedef enum StrokeStyle
 {
     STROKE_FULL,
@@ -25,6 +27,8 @@ typedef struct Painter
     Color backColor, frontColor;
     StrokeStyle strokeStyle;
     FillStyle fillStyle;
+
+    GLuint framebuffer;
 } Painter;
 
 NVAPI void PainterDrawLine(Painter *painter, int x1, int y1, int x2, int y2);
