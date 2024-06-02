@@ -6,7 +6,6 @@
 #include "nvui/painter.h"
 
 #include <stdio.h>
-#include <wingdi.h>
 
 #define WINDOW_MIN_WIDTH 200
 #define WINDOW_MIN_HEIGHT 200
@@ -215,12 +214,12 @@ static void ElementPaint(Element *element, Painter *painter)
 
 static void MakeCurrent(Window *window);
 
-static void Update()
+static void Update(Window *window)
 {
-    for(size_t i = 0; i < global.windowCount; ++i)
-    {
-        Window *window = global.windows[i];
-        MakeCurrent(window);
+    //for(size_t i = 0; i < global.windowCount; ++i)
+    //{
+        //Window *window = global.windows[i];
+        //MakeCurrent(window);
         if(RectangleValid(window->updateRegion))
         {
             Painter painter;
@@ -232,7 +231,7 @@ static void Update()
             WindowEndPaint(window, &painter);
             window->updateRegion = (Rectangle){ 0 };
         }
-    }
+    //}
 }
 
 static void RemoveAllElements(Element *element)
@@ -553,11 +552,6 @@ NVAPI int MessageLoop(void)
 #elif defined __linux__
 #include <string.h>
 
-static void MakeCurrent(Window *window)
-{
-    glXMakeCurrent(global.display, window->window, window->context);
-}
-
 static Window* FindWindow(X11Window window)
 {
     for(size_t i = 0; i < global.windowCount; ++i)
@@ -708,7 +702,7 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
 
 NVAPI int MessageLoop(void)
 {
-    Update();
+    //Update();
 
     bool isRunning = true;
     while(isRunning)
@@ -723,18 +717,18 @@ NVAPI int MessageLoop(void)
                 Window *window = FindWindow(event.xexpose.window);
                 if(!window) continue;
 
+                glXMakeCurrent(global.display, window->window, window->context);
                 if(window->firstTimeLayout)
                 {
                     window->e.bounds = (Rectangle){ .r = window->width, .b = window->height };
                     window->e.clip = (Rectangle){ .r = window->width, .b = window->height };
 
                     ElementMessage(&window->e, MSG_LAYOUT, 0, NULL);
-                    Update();
 
                     window->firstTimeLayout = false;
                 }
 
-                glxMakeCurrent(global.display, window->window, window->context);
+                Update(window);
                 glDisable(GL_SCISSOR_TEST);
                 glClearNamedFramebufferfv(0, GL_COLOR, 0, (float[]){ 0, 1, 0, 1 });
                 glBlitNamedFramebuffer(window->glData.framebuffer, 0, 0, 0, window->width, window->height, 0, 0, window->width, window->height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
@@ -756,7 +750,7 @@ NVAPI int MessageLoop(void)
                     window->e.clip = (Rectangle){ .r = window->width, .b = window->height };
 
                     ElementMessage(&window->e, MSG_LAYOUT, 0, NULL);
-                    Update();
+                    //Update();
                 }
             }
             break;

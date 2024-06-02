@@ -58,7 +58,7 @@ ifeq ($(PLATFORM),WINDOWS)
     LIB_DIRS += $(LIB_GCC_PATH)
     INC_DIRS += $(INC_PATH)
     LDFLAGS += -mwindows 
-    TESTFLAGS += -mconsole
+    TESTFLAGS += -mconsole -I$(INC_PATH)
 else 
     LIBRARY_NAME := lib$(LIBRARY).so
     LDFLAGS += -fvisibility=hidden
@@ -93,7 +93,7 @@ $(BUILD_DIR):
 
 $(APPLICATION): $(LIBRARY_NAME) test/main.c
 	@echo "LD $@"
-	@$(LD) -o $@ $(TESTFLAGS) -I$(INC_PATH) test/main.c
+	@$(LD) -o $@ $(TESTFLAGS) test/main.c
 
 $(LIBRARY_STATIC): $(OBJS)
 	@echo "AR $@"
