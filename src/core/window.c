@@ -144,8 +144,11 @@ static void DestroyGLData(Window *window)
 
 static void ResizeTextures(Window *window)
 {
-    GLuint renderbuffers[] = { window->glData.colorRb, window->glData.depthRb };
-    glDeleteRenderbuffers(2, renderbuffers);
+    if(window->glData.colorRb)
+    {
+        GLuint renderbuffers[] = { window->glData.colorRb, window->glData.depthRb };
+        glDeleteRenderbuffers(2, renderbuffers);
+    }
 
     glCreateRenderbuffers(1, &window->glData.colorRb);
     glCreateRenderbuffers(1, &window->glData.depthRb);
@@ -386,15 +389,16 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
         break;
     case WM_PAINT:
         {
+            PAINTSTRUCT paint;
+            BeginPaint(hwnd, &paint);
             wglMakeCurrent(window->hdc, window->hglrc);
-            glViewport(0, 0, window->width, window->height);
-            glScissor(0, 0, window->width, window->height);
             Update(window);
             glDisable(GL_SCISSOR_TEST);
             glClearNamedFramebufferfv(0, GL_COLOR, 0, (float[]){ 0, 1, 1, 1 });
             glBlitNamedFramebuffer(window->glData.framebuffer, 0, 0, 0, window->width, window->height, 0, 0, window->width, window->height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
             SwapBuffers(window->hdc);
             glEnable(GL_SCISSOR_TEST);
+            EndPaint(hwnd, &paint);
         }
         break;
     case WM_GETMINMAXINFO:
@@ -437,7 +441,7 @@ NVAPI void Initialize(void)
         .hCursor = LoadCursorA(NULL, IDC_ARROW),
         .hIcon = LoadIconA(NULL, IDI_APPLICATION),
         .hInstance = GetModuleHandleA(NULL),
-        .style = CS_OWNDC,
+        .style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW,
         .lpszClassName = WINDOW_CLASS
     };
     RegisterClassExA(&windowClass);
@@ -454,7 +458,10 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
     global.windows = realloc(global.windows, sizeof(Window*) * global.windowCount);
     global.windows[global.windowCount - 1] = window;
 
-    window->hwnd = CreateWindowExA(WS_EX_OVERLAPPEDWINDOW, WINDOW_CLASS, title, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, width, height, NULL, NULL, NULL, NULL);
+    RECT windowRect = { .right = width, .bottom = height };
+    AdjustWindowRectEx(&windowRect, WS_OVERLAPPEDWINDOW, false, WS_EX_OVERLAPPEDWINDOW);
+
+    window->hwnd = CreateWindowExA(WS_EX_OVERLAPPEDWINDOW, WINDOW_CLASS, title, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, windowRect.right - windowRect.left, windowRect.bottom - windowRect.top, NULL, NULL, NULL, NULL);
     if(!window->hwnd) return NULL;
     SetWindowLongPtrA(window->hwnd, GWLP_USERDATA, (LONG_PTR)window);
 
@@ -500,6 +507,7 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
         0
     };
 
+    //HGLRC shareCtx = global.windowCount > 0 ? global.windows[0]->hglrc : NULL;
     window->hglrc = wglCreateContextAttribsARB(window->hdc, NULL, glattrib);
     if(!window->hglrc) return NULL;
 
