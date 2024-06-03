@@ -631,6 +631,11 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
         GLX_DEPTH_SIZE, 24,
         GLX_STENCIL_SIZE, 8,
         GLX_DOUBLEBUFFER, True,
+        
+        //GLX_FRAMEBUFFER_SRGB_CAPABLE_ARB, True,
+
+        //GLX_SAMPLE_BUFFERS, True,
+        //GLX_SAMPLES, 8,
         None
     };
     int fbcount;
@@ -669,6 +674,7 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
 #ifdef _DEBUG
         GLX_CONTEXT_FLAGS_ARB, GLX_CONTEXT_DEBUG_BIT_ARB,
 #endif
+
         None
     };
 
@@ -691,8 +697,6 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
 
 NVAPI int MessageLoop(void)
 {
-    //Update();
-
     bool isRunning = true;
     while(isRunning)
     {
@@ -739,7 +743,6 @@ NVAPI int MessageLoop(void)
                     window->e.clip = (Rectangle){ .r = window->width, .b = window->height };
 
                     ElementMessage(&window->e, MSG_LAYOUT, 0, NULL);
-                    //Update();
                 }
             }
             break;
