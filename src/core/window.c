@@ -151,7 +151,6 @@ static void ResizeTextures(Window *window)
     glCreateRenderbuffers(1, &window->glData.depthRb);
 
     glNamedRenderbufferStorage(window->glData.colorRb, GL_RGBA8, window->width, window->height);
-
     glNamedRenderbufferStorage(window->glData.depthRb, GL_DEPTH_COMPONENT24, window->width, window->height);
 
     if(!window->glData.framebuffer)
@@ -168,7 +167,6 @@ static int WindowMessage(Element *element, Message message, int di, void *dp)
 {
     if(message == MSG_LAYOUT)
     {
-        glViewport(0, 0, element->window->width, element->window->height);
         element->window->projection = glms_ortho(0, element->window->width, 0, element->window->height, -1, 1);
         ResizeTextures(element->window);
         if(element->childCount)
@@ -212,26 +210,19 @@ static void ElementPaint(Element *element, Painter *painter)
     }
 }
 
-static void MakeCurrent(Window *window);
-
 static void Update(Window *window)
 {
-    //for(size_t i = 0; i < global.windowCount; ++i)
-    //{
-        //Window *window = global.windows[i];
-        //MakeCurrent(window);
-        if(RectangleValid(window->updateRegion))
-        {
-            Painter painter;
-            painter.width = window->width;
-            painter.height = window->height;
-            painter.clip = RectangleIntersection((Rectangle){ .r = window->width, .b = window->height }, window->updateRegion);
-            painter.framebuffer = window->glData.framebuffer;
-            ElementPaint(&window->e, &painter);
-            WindowEndPaint(window, &painter);
-            window->updateRegion = (Rectangle){ 0 };
-        }
-    //}
+    if(RectangleValid(window->updateRegion))
+    {
+        Painter painter;
+        painter.width = window->width;
+        painter.height = window->height;
+        painter.clip = RectangleIntersection((Rectangle){ .r = window->width, .b = window->height }, window->updateRegion);
+        painter.framebuffer = window->glData.framebuffer;
+        ElementPaint(&window->e, &painter);
+        WindowEndPaint(window, &painter);
+        window->updateRegion = (Rectangle){ 0 };
+    }
 }
 
 static void RemoveAllElements(Element *element)
@@ -288,11 +279,6 @@ static void GLDebugCallback(GLenum source, GLenum type, GLuint id, GLenum severi
 
 #ifdef _WIN32
 #define WINDOW_CLASS "NVWINDOW"
-
-static void MakeCurrent(Window *window)
-{
-    wglMakeCurrent(window->hdc, window->hglrc);
-}
 
 static bool LoadPreGLFunctions(void)
 {
@@ -395,15 +381,17 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
                 window->e.bounds = (Rectangle){ .r = window->width, .b = window->height };
                 window->e.clip = (Rectangle){ .r = window->width, .b = window->height };
                 ElementMessage(&window->e, MSG_LAYOUT, 0, NULL);
-                Update();
             }
         }
         break;
     case WM_PAINT:
         {
             wglMakeCurrent(window->hdc, window->hglrc);
+            glViewport(0, 0, window->width, window->height);
+            glScissor(0, 0, window->width, window->height);
+            Update(window);
             glDisable(GL_SCISSOR_TEST);
-            glClearNamedFramebufferfv(0, GL_COLOR, 0, (float[]){ 0, 1, 0, 1 });
+            glClearNamedFramebufferfv(0, GL_COLOR, 0, (float[]){ 0, 1, 1, 1 });
             glBlitNamedFramebuffer(window->glData.framebuffer, 0, 0, 0, window->width, window->height, 0, 0, window->width, window->height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
             SwapBuffers(window->hdc);
             glEnable(GL_SCISSOR_TEST);
@@ -448,6 +436,7 @@ NVAPI void Initialize(void)
         .lpfnWndProc = WndProc,
         .hCursor = LoadCursorA(NULL, IDC_ARROW),
         .hIcon = LoadIconA(NULL, IDI_APPLICATION),
+        .hInstance = GetModuleHandleA(NULL),
         .style = CS_OWNDC,
         .lpszClassName = WINDOW_CLASS
     };
