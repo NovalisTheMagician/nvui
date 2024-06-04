@@ -14,7 +14,6 @@
 
 GlobalState global = {};
 static bool glFuncsLoaded = false;
-static bool buffersNeedResize = true;
 
 static bool CompileShader(const char *shaderScr, GLuint *shader)
 {
@@ -175,7 +174,7 @@ static int WindowMessage(Element *element, Message message, int di, void *dp)
     if(message == MSG_LAYOUT)
     {
         element->window->projection = glms_ortho(0, element->window->width, 0, element->window->height, -1, 1);
-        buffersNeedResize = true;
+        element->window->buffersNeedResize = true;
         if(element->childCount)
         {
             ElementMove(element->children[0], element->bounds, false);
@@ -409,10 +408,10 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
             PAINTSTRUCT paint;
             BeginPaint(hwnd, &paint);
             wglMakeCurrent(window->hdc, window->hglrc);
-            if(buffersNeedResize)
+            if(window->buffersNeedResize)
             {
                 ResizeTextures(window);
-                buffersNeedResize = false;
+                window->buffersNeedResize = false;
             }
             Update(window);
             
@@ -754,10 +753,10 @@ NVAPI int MessageLoop(void)
                     window->firstTimeLayout = false;
                 }
 
-                if(buffersNeedResize)
+                if(window->buffersNeedResize)
                 {
                     ResizeTextures(window);
-                    buffersNeedResize = false;
+                    window->buffersNeedResize = false;
                 }
 
                 Update(window);

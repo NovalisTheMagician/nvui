@@ -40,6 +40,8 @@ typedef struct Window
     GLData glData;
     mat4s projection;
 
+    bool buffersNeedResize;
+
 #ifdef _WIN32
     HWND hwnd;
     HGLRC hglrc;
