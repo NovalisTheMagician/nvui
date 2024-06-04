@@ -1,5 +1,6 @@
 #include "nvui/window.h"
 
+#include <X11/Xlib.h>
 #include <stdlib.h>
 
 #include "nvui/element.h"
@@ -179,7 +180,6 @@ static int WindowMessage(Element *element, Message message, int di, void *dp)
         {
             ElementMove(element->children[0], element->bounds, false);
             ElementRepaint(element, NULL);
-            InvalidateRect(element->window->hwnd, NULL, false);
         }
     }
     return 0;
@@ -400,6 +400,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
                 window->e.bounds = (Rectangle){ .r = window->width, .b = window->height };
                 window->e.clip = (Rectangle){ .r = window->width, .b = window->height };
                 ElementMessage(&window->e, MSG_LAYOUT, 0, NULL);
+                //InvalidateRect(element->window->hwnd, NULL, false);
             }
         }
         break;
@@ -753,6 +754,12 @@ NVAPI int MessageLoop(void)
                     window->firstTimeLayout = false;
                 }
 
+                if(buffersNeedResize)
+                {
+                    ResizeTextures(window);
+                    buffersNeedResize = false;
+                }
+
                 Update(window);
                 glDisable(GL_SCISSOR_TEST);
                 glClearNamedFramebufferfv(0, GL_COLOR, 0, (float[]){ 0, 1, 0, 1 });
@@ -775,6 +782,8 @@ NVAPI int MessageLoop(void)
                     window->e.clip = (Rectangle){ .r = window->width, .b = window->height };
 
                     ElementMessage(&window->e, MSG_LAYOUT, 0, NULL);
+                    //XClearArea(global.display, window->window, 0, 0, 1, 1, true);
+                    //XFlush(global.display);
                 }
             }
             break;
