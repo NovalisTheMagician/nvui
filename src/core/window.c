@@ -1,6 +1,5 @@
 #include "nvui/window.h"
 
-#include <X11/Xlib.h>
 #include <stdlib.h>
 
 #include "nvui/element.h"
@@ -531,7 +530,6 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
         0
     };
 
-    //HGLRC shareCtx = global.windowCount > 0 ? global.windows[0]->hglrc : NULL;
     window->hglrc = wglCreateContextAttribsARB(window->hdc, NULL, glattrib);
     if(!window->hglrc) return NULL;
 
