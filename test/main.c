@@ -13,8 +13,8 @@ int ElementAMessage(Element *element, Message message, int di, void *dp) {
 	if (message == MSG_PAINT) {
         Painter *painter = dp;
         painter->backColor = ColorFromInt(0xFF77FF);
-		//PainterFillRect(painter, bounds);
-        PainterClear(painter);
+		PainterFillRect(painter, bounds);
+        //PainterClear(painter);
 	} else if (message == MSG_LAYOUT) {
 		fprintf(stderr, "layout A with bounds (%d->%d;%d->%d)\n", bounds.l, bounds.r, bounds.t, bounds.b);
 		ElementMove(elementB, (Rectangle){bounds.l + 20, bounds.r - 20, bounds.t + 20, bounds.b - 20}, false);
@@ -31,10 +31,10 @@ int ElementBMessage(Element *element, Message message, int di, void *dp) {
 	if (message == MSG_PAINT) {
         Painter *painter = dp;
         painter->backColor = ColorFromInt(0xDDDDE0);
-		//PainterFillRect(painter, bounds);
-        PainterClear(painter);
+		PainterFillRect(painter, bounds);
+        //PainterClear(painter);
 	} else if (message == MSG_LAYOUT) {
-		fprintf(stderr, "layout B with bounds (%d->%d;%d->%d)\n", bounds.l, bounds.r, bounds.t, bounds.b);
+		//fprintf(stderr, "layout B with bounds (%d->%d;%d->%d)\n", bounds.l, bounds.r, bounds.t, bounds.b);
 		ElementMove(elementC, (Rectangle){bounds.l - 40, bounds.l + 40, bounds.t + 40, bounds.b - 40}, false);
 		ElementMove(elementD, (Rectangle){bounds.r - 40, bounds.r + 40, bounds.t + 40, bounds.b - 40}, false);
 	}
@@ -50,10 +50,10 @@ int ElementCMessage(Element *element, Message message, int di, void *dp) {
 	if (message == MSG_PAINT) {
         Painter *painter = dp;
         painter->backColor = ColorFromInt(0x3377FF);
-		//PainterFillRect(painter, bounds);
-        PainterClear(painter);
+		PainterFillRect(painter, bounds);
+        //PainterClear(painter);
 	} else if (message == MSG_LAYOUT) {
-		fprintf(stderr, "layout C with bounds (%d->%d;%d->%d)\n", bounds.l, bounds.r, bounds.t, bounds.b);
+		//fprintf(stderr, "layout C with bounds (%d->%d;%d->%d)\n", bounds.l, bounds.r, bounds.t, bounds.b);
 	}
 
 	return 0;
@@ -67,10 +67,10 @@ int ElementDMessage(Element *element, Message message, int di, void *dp) {
 	if (message == MSG_PAINT) {
         Painter *painter = dp;
         painter->backColor = ColorFromInt(0x33CC33);
-		//PainterFillRect(painter, bounds);
-        PainterClear(painter);
+		PainterFillRect(painter, bounds);
+        //PainterClear(painter);
 	} else if (message == MSG_LAYOUT) {
-		fprintf(stderr, "layout D with bounds (%d->%d;%d->%d)\n", bounds.l, bounds.r, bounds.t, bounds.b);
+		//fprintf(stderr, "layout D with bounds (%d->%d;%d->%d)\n", bounds.l, bounds.r, bounds.t, bounds.b);
 	}
 
 	return 0;
@@ -83,10 +83,10 @@ int ElementEMessage(Element *element, Message message, int di, void *dp)
 	if (message == MSG_PAINT) {
         Painter *painter = dp;
         painter->backColor = ColorFromInt(0x33CC33);
-		//PainterFillRect(painter, bounds);
-        PainterClear(painter);
+		PainterFillRect(painter, bounds);
+        //PainterClear(painter);
 	} else if (message == MSG_LAYOUT) {
-		fprintf(stderr, "layout E with bounds (%d->%d;%d->%d)\n", bounds.l, bounds.r, bounds.t, bounds.b);
+		//fprintf(stderr, "layout E with bounds (%d->%d;%d->%d)\n", bounds.l, bounds.r, bounds.t, bounds.b);
 	}
 
 	return 0;

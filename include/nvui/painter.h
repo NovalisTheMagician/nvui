@@ -31,6 +31,8 @@ typedef struct Painter
 
     GLuint framebuffer, textureLoc, tintLoc, defaultTexture;
     Vertex *vertexMap;
+
+    size_t vertIndex;
 } Painter;
 
 NVAPI void PainterDrawLine(Painter *painter, int x1, int y1, int x2, int y2);

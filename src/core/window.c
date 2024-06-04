@@ -9,10 +9,11 @@
 
 #define WINDOW_MIN_WIDTH 200
 #define WINDOW_MIN_HEIGHT 200
-#define BUFFER_SIZE 1024 * 64 //64 kilobytes of vertexbuffer allocated
+#define BUFFER_SIZE 1024 * 64 //64k vertices as a draw buffer. that should support complex drawing operations
 
 GlobalState global = {};
 static bool glFuncsLoaded = false;
+static bool buffersNeedResize = true;
 
 static bool CompileShader(const char *shaderScr, GLuint *shader)
 {
@@ -56,8 +57,8 @@ static bool InitGLData(Window *window)
     const char *vertShaderSrc = 
         "#version 460 core\n"
         "layout(location=0) in vec2 inPosition;\n"
-        "layout(location=1) in vec4 inColor;\n"
-        "layout(location=3) in vec2 inTexCoords;\n"
+        "layout(location=1) in vec2 inTexCoords;\n"
+        "layout(location=2) in vec4 inColor;\n"
         "out vec4 outColor;\n"
         "out vec2 outTexCoords;\n"
         "uniform mat4 viewProj;\n"
@@ -162,8 +163,10 @@ static void ResizeTextures(Window *window)
     glNamedFramebufferRenderbuffer(window->glData.framebuffer, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, window->glData.depthRb);
 
     glBindFramebuffer(GL_FRAMEBUFFER, window->glData.framebuffer);
-    float color[] = { 0, 0, 0, 1 };
-    glClearNamedFramebufferfv(window->glData.framebuffer, GL_COLOR, 0, color);
+    glDisable(GL_SCISSOR_TEST);
+    glClearNamedFramebufferfv(window->glData.framebuffer, GL_COLOR, 0, (float[]){ 0, 0, 0, 1 });
+    glEnable(GL_SCISSOR_TEST);
+    glViewport(0, 0, window->width, window->height);
 }
 
 static int WindowMessage(Element *element, Message message, int di, void *dp)
@@ -171,11 +174,12 @@ static int WindowMessage(Element *element, Message message, int di, void *dp)
     if(message == MSG_LAYOUT)
     {
         element->window->projection = glms_ortho(0, element->window->width, 0, element->window->height, -1, 1);
-        ResizeTextures(element->window);
+        buffersNeedResize = true;
         if(element->childCount)
         {
             ElementMove(element->children[0], element->bounds, false);
             ElementRepaint(element, NULL);
+            InvalidateRect(element->window->hwnd, NULL, false);
         }
     }
     return 0;
@@ -192,9 +196,7 @@ static void ElementPaint(Element *element, Painter *painter)
 
     painter->clip = clip;
     glScissor(clip.l, clip.t, clip.r - clip.l, clip.b - clip.t);
-    glBindVertexArray(gldata.vertexFormat);
-    glUseProgram(gldata.shaderProgram);
-    glUniformMatrix4fv(gldata.projectionLoc, 1, GL_FALSE, (float*)&element->window->projection);
+    
     glBindTextureUnit(0, gldata.whiteTexture);
     glUniform1i(gldata.textureLoc, 0);
     glUniform4fv(gldata.tintLoc, 1, (float[]){ 1, 1, 1, 1 });
@@ -217,11 +219,20 @@ static void Update(Window *window)
 {
     if(RectangleValid(window->updateRegion))
     {
-        Painter painter;
+        const GLData gldata = window->glData;
+
+        Painter painter = {};
         painter.width = window->width;
         painter.height = window->height;
         painter.clip = RectangleIntersection((Rectangle){ .r = window->width, .b = window->height }, window->updateRegion);
-        painter.framebuffer = window->glData.framebuffer;
+        painter.framebuffer = gldata.framebuffer;
+
+        glBindFramebuffer(GL_FRAMEBUFFER, gldata.framebuffer);
+        glBindVertexArray(gldata.vertexFormat);
+        glVertexArrayVertexBuffer(gldata.vertexFormat, 0, gldata.vertexBuffer, 0, sizeof(Vertex));
+        glUseProgram(gldata.shaderProgram);
+        glUniformMatrix4fv(gldata.projectionLoc, 1, GL_FALSE, (float*)&window->projection.raw);
+
         ElementPaint(&window->e, &painter);
         WindowEndPaint(window, &painter);
         window->updateRegion = (Rectangle){ 0 };
@@ -322,7 +333,7 @@ static bool LoadPreGLFunctions(void)
 
     if(!GLAD_WGL_ARB_create_context || !GLAD_WGL_ARB_create_context_profile || !GLAD_WGL_ARB_pixel_format || !GLAD_WGL_EXT_swap_control)
     {
-        fprintf(stderr, "This system does not support required wgl extensions\n");
+        fprintf(stderr, "This system does not support the required wgl extensions\n");
         return false;
     }
 
@@ -370,6 +381,11 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
     {
     case WM_CLOSE:
         {
+            DestroyWindow(hwnd);
+        }
+        break;
+    case WM_DESTROY:
+        {
             PostQuitMessage(0);
         }
         break;
@@ -392,7 +408,13 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
             PAINTSTRUCT paint;
             BeginPaint(hwnd, &paint);
             wglMakeCurrent(window->hdc, window->hglrc);
+            if(buffersNeedResize)
+            {
+                ResizeTextures(window);
+                buffersNeedResize = false;
+            }
             Update(window);
+            
             glDisable(GL_SCISSOR_TEST);
             glClearNamedFramebufferfv(0, GL_COLOR, 0, (float[]){ 0, 1, 1, 1 });
             glBlitNamedFramebuffer(window->glData.framebuffer, 0, 0, 0, window->width, window->height, 0, 0, window->width, window->height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
@@ -403,9 +425,11 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
         break;
     case WM_GETMINMAXINFO:
         {
+            RECT windowRect = { .right = WINDOW_MIN_WIDTH, .bottom = WINDOW_MIN_HEIGHT };
+            AdjustWindowRectEx(&windowRect, WS_OVERLAPPEDWINDOW, false, WS_EX_OVERLAPPEDWINDOW);
             MINMAXINFO *mmi = (MINMAXINFO*)lParam;
-            mmi->ptMinTrackSize.x = WINDOW_MIN_WIDTH;
-            mmi->ptMinTrackSize.y = WINDOW_MIN_HEIGHT;
+            mmi->ptMinTrackSize.x = windowRect.right - windowRect.left;
+            mmi->ptMinTrackSize.y = windowRect.bottom - windowRect.top;
         }
     default:
         return DefWindowProcA(hwnd, message, wParam, lParam);
@@ -461,7 +485,7 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
     RECT windowRect = { .right = width, .bottom = height };
     AdjustWindowRectEx(&windowRect, WS_OVERLAPPEDWINDOW, false, WS_EX_OVERLAPPEDWINDOW);
 
-    window->hwnd = CreateWindowExA(WS_EX_OVERLAPPEDWINDOW, WINDOW_CLASS, title, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, windowRect.right - windowRect.left, windowRect.bottom - windowRect.top, NULL, NULL, NULL, NULL);
+    window->hwnd = CreateWindowExA(WS_EX_OVERLAPPEDWINDOW, WINDOW_CLASS, title, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, windowRect.right - windowRect.left, windowRect.bottom - windowRect.top, NULL, NULL, GetModuleHandleA(NULL), NULL);
     if(!window->hwnd) return NULL;
     SetWindowLongPtrA(window->hwnd, GWLP_USERDATA, (LONG_PTR)window);
 
