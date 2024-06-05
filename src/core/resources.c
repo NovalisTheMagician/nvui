@@ -1,4 +1,16 @@
 #include "nvui/resources.h"
 
-//INCBIN(Font, "src/core/Px437_IBM_VGA_9x16.ttf");
-INCBIN(Font, "src/core/UbuntuMono-Regular.ttf");
+INCBIN(FontSansRegular, "fonts/LiberationSans-Regular.ttf");
+INCBIN(FontSansItalic, "fonts/LiberationSans-Italic.ttf");
+INCBIN(FontSansBold, "fonts/LiberationSans-Bold.ttf");
+INCBIN(FontSansBoldItalic, "fonts/LiberationSans-BoldItalic.ttf");
+
+INCBIN(FontSerifRegular, "fonts/LiberationSerif-Regular.ttf");
+INCBIN(FontSerifItalic, "fonts/LiberationSerif-Italic.ttf");
+INCBIN(FontSerifBold, "fonts/LiberationSerif-Bold.ttf");
+INCBIN(FontSerifBoldItalic, "fonts/LiberationSerif-BoldItalic.ttf");
+
+INCBIN(FontMonoRegular, "fonts/LiberationMono-Regular.ttf");
+INCBIN(FontMonoItalic, "fonts/LiberationMono-Italic.ttf");
+INCBIN(FontMonoBold, "fonts/LiberationMono-Bold.ttf");
+INCBIN(FontMonoBoldItalic, "fonts/LiberationMono-BoldItalic.ttf");

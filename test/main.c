@@ -26,15 +26,15 @@ int MyElementMessage(Element *element, Message message, int di, void *dp) {
 			for (int j = -2; j <= 2; j++) {
 				Rectangle rectangle = (Rectangle){element->bounds.l - j, element->bounds.r - j, 
 						element->bounds.t - i, element->bounds.b - i};
-				// color 0xffffff
-				//PainterDrawString(painter, rectangle, message, strlen(message), true);
+				painter->backColor = ColorFromInt(0xffffff);
+				painter->fontStyle = Regular;
+				PainterDrawString(painter, rectangle, message, strlen(message), true);
 			}
 		}
 
+		painter->fontStyle = Regular;
 		painter->backColor = ColorFromInt(0x000000);
 		PainterDrawString(painter, element->bounds, message, strlen(message), true);
-
-		//PainterDebug(painter);
 	} else if (message == MSG_LAYOUT) {
 		fprintf(stderr, "layout with bounds (%d->%d;%d->%d)\n", element->bounds.l, element->bounds.r, element->bounds.t, element->bounds.b);
 	}
