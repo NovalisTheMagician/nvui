@@ -1,6 +1,7 @@
 #include <nvui/window.h>
 #include <nvui/painter.h>
 #include <stdio.h>
+#include <string.h>
 
 int MyElementMessage(Element *element, Message message, int di, void *dp) {
 	(void) di;

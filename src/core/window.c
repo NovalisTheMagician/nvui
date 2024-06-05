@@ -801,7 +801,7 @@ NVAPI int MessageLoop(void)
                 Update(window);
                 glDisable(GL_SCISSOR_TEST);
                 glClearNamedFramebufferfv(0, GL_COLOR, 0, (float[]){ 0, 1, 0, 1 });
-                glBlitNamedFramebuffer(window->glData.framebuffer, 0, 0, 0, window->width, window->height, 0, 0, window->width, window->height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+                glBlitNamedFramebuffer(window->glData.framebuffer, 0, 0, 0, window->width, window->height, 0, window->height, window->width, 0, GL_COLOR_BUFFER_BIT, GL_LINEAR);
                 glXSwapBuffers(global.display, window->window);
                 glEnable(GL_SCISSOR_TEST);
             }
