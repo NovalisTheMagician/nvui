@@ -8,6 +8,11 @@ typedef struct Rectangle
     int l, r, t, b;
 } Rectangle;
 
+typedef struct RectangleF
+{
+    float l, r, t, b;
+} RectangleF;
+
 NVAPI bool RectangleValid(Rectangle r);
 NVAPI Rectangle RectangleIntersection(Rectangle a, Rectangle b);
 NVAPI Rectangle RectangleBounding(Rectangle a, Rectangle b);

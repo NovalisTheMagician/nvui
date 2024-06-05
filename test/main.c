@@ -2,111 +2,48 @@
 #include <nvui/painter.h>
 #include <stdio.h>
 
-Element *elementA, *elementB, *elementC, *elementD;
-
-int ElementAMessage(Element *element, Message message, int di, void *dp) {
-	(void) di;
-    
-
-	Rectangle bounds = element->bounds;
-
-	if (message == MSG_PAINT) {
-        Painter *painter = dp;
-        painter->backColor = ColorFromInt(0xFF77FF);
-		PainterFillRect(painter, bounds);
-        //PainterClear(painter);
-	} else if (message == MSG_LAYOUT) {
-		fprintf(stderr, "layout A with bounds (%d->%d;%d->%d)\n", bounds.l, bounds.r, bounds.t, bounds.b);
-		ElementMove(elementB, (Rectangle){bounds.l + 20, bounds.r - 20, bounds.t + 20, bounds.b - 20}, false);
-	}
-
-	return 0;
-}
-
-int ElementBMessage(Element *element, Message message, int di, void *dp) {
+int MyElementMessage(Element *element, Message message, int di, void *dp) {
 	(void) di;
 
-	Rectangle bounds = element->bounds;
-
 	if (message == MSG_PAINT) {
-        Painter *painter = dp;
-        painter->backColor = ColorFromInt(0xDDDDE0);
-		PainterFillRect(painter, bounds);
-        //PainterClear(painter);
+		Painter *painter = dp;
+		painter->backColor = ColorFromInt(0xFFCCFF);
+		PainterFillRect(painter, element->bounds);
+
+		for (int i = 0; i < 5; i++) {
+			for (int j = 0; j < 5; j++) {
+				painter->backColor = ColorFromInt(0xFFFFFF);
+				PainterFillRect(painter, (Rectangle){20 + j * 30, 40 + j * 30, 20 + i * 30, 40 + i * 30});
+				painter->backColor = ColorFromInt(0x000000);
+				PainterDrawRect(painter, (Rectangle){20 + j * 30, 40 + j * 30, 20 + i * 30, 40 + i * 30});
+			}
+		}
+
+		const char *message = "Hello World!";
+
+		for (int i = -2; i <= 2; i++) {
+			for (int j = -2; j <= 2; j++) {
+				Rectangle rectangle = (Rectangle){element->bounds.l - j, element->bounds.r - j, 
+						element->bounds.t - i, element->bounds.b - i};
+				// color 0xffffff
+				//PainterDrawString(painter, rectangle, message, strlen(message), true);
+			}
+		}
+
+		painter->backColor = ColorFromInt(0x000000);
+		PainterDrawString(painter, element->bounds, message, strlen(message), true);
+
+		//PainterDebug(painter);
 	} else if (message == MSG_LAYOUT) {
-		//fprintf(stderr, "layout B with bounds (%d->%d;%d->%d)\n", bounds.l, bounds.r, bounds.t, bounds.b);
-		ElementMove(elementC, (Rectangle){bounds.l - 40, bounds.l + 40, bounds.t + 40, bounds.b - 40}, false);
-		ElementMove(elementD, (Rectangle){bounds.r - 40, bounds.r + 40, bounds.t + 40, bounds.b - 40}, false);
+		fprintf(stderr, "layout with bounds (%d->%d;%d->%d)\n", element->bounds.l, element->bounds.r, element->bounds.t, element->bounds.b);
 	}
 
 	return 0;
 }
 
-int ElementCMessage(Element *element, Message message, int di, void *dp) {
-	(void) di;
-
-	Rectangle bounds = element->bounds;
-
-	if (message == MSG_PAINT) {
-        Painter *painter = dp;
-        painter->backColor = ColorFromInt(0x3377FF);
-		PainterFillRect(painter, bounds);
-        //PainterClear(painter);
-	} else if (message == MSG_LAYOUT) {
-		//fprintf(stderr, "layout C with bounds (%d->%d;%d->%d)\n", bounds.l, bounds.r, bounds.t, bounds.b);
-	}
-
-	return 0;
-}
-
-int ElementDMessage(Element *element, Message message, int di, void *dp) {
-	(void) di;
-
-	Rectangle bounds = element->bounds;
-
-	if (message == MSG_PAINT) {
-        Painter *painter = dp;
-        painter->backColor = ColorFromInt(0x33CC33);
-		PainterFillRect(painter, bounds);
-        //PainterClear(painter);
-	} else if (message == MSG_LAYOUT) {
-		//fprintf(stderr, "layout D with bounds (%d->%d;%d->%d)\n", bounds.l, bounds.r, bounds.t, bounds.b);
-	}
-
-	return 0;
-}
-
-int ElementEMessage(Element *element, Message message, int di, void *dp)
-{
-	Rectangle bounds = element->bounds;
-
-	if (message == MSG_PAINT) {
-        Painter *painter = dp;
-        painter->backColor = ColorFromInt(0x33CC33);
-		PainterFillRect(painter, bounds);
-        //PainterClear(painter);
-	} else if (message == MSG_LAYOUT) {
-		//fprintf(stderr, "layout E with bounds (%d->%d;%d->%d)\n", bounds.l, bounds.r, bounds.t, bounds.b);
-	}
-
-	return 0;
-}
-
-int main(int argc, char *argv[])
-{
-    Initialize();
-    Window *window = WindowCreate("Hello World!", 800, 600);
-	if(!window)
-	{
-		printf("failed to create window\n");
-		return 1;
-	}
-    elementA = ElementCreate(sizeof(Element), &window->e, 0, ElementAMessage);
-	elementB = ElementCreate(sizeof(Element), elementA, 0, ElementBMessage);
-	elementC = ElementCreate(sizeof(Element), elementB, 0, ElementCMessage);
-	elementD = ElementCreate(sizeof(Element), elementB, 0, ElementDMessage);
-
-	Window *w2 = WindowCreate("Hah", 300, 300);
-	Element *elementE = ElementCreate(sizeof *elementE, &w2->e, 0, ElementEMessage);
-    return MessageLoop();
+int main() {
+	Initialize();
+	Window *window = WindowCreate("Hello, world", 640, 480);
+	ElementCreate(sizeof(Element), &window->e, 0, MyElementMessage);
+	return MessageLoop();
 }

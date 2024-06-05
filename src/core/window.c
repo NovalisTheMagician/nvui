@@ -11,6 +11,8 @@
 #define WINDOW_MIN_HEIGHT 200
 #define BUFFER_SIZE 1024 * 64 //64k vertices as a draw buffer. that should support complex drawing operations
 
+#include "nvui/resources.h"
+
 GlobalState global = {};
 static bool glFuncsLoaded = false;
 
@@ -79,6 +81,18 @@ static bool InitGLData(Window *window)
         "   fragColor = outColor * texture(tex, outTexCoords) * tint;\n"
         "}\n";
 
+    const char *fontShaderSrc =
+        "#version 460 core\n"
+        "in vec4 outColor;\n"
+        "in vec2 outTexCoords;\n"
+        "out vec4 fragColor;\n"
+        "uniform sampler2D tex;\n"
+        "uniform vec4 tint;\n"
+        "void main() {\n"
+        "   if(texture(tex, outTexCoords).r <= 0.02) discard;"
+        "   fragColor = outColor * tint;\n"
+        "}\n";
+
     GLuint vertShader = glCreateShader(GL_VERTEX_SHADER);
     if(!CompileShader(vertShaderSrc, &vertShader))
         return false;
@@ -87,13 +101,23 @@ static bool InitGLData(Window *window)
     if(!CompileShader(fragShaderSrc, &fragShader))
         return false;
 
+    GLuint fontShader = glCreateShader(GL_FRAGMENT_SHADER);
+    if(!CompileShader(fontShaderSrc, &fontShader))
+        return false;
+
     GLuint program = glCreateProgram();
     if(!LinkProgram(vertShader, fragShader, &program))
         return false;
 
+    GLuint fontProgram = glCreateProgram();
+    if(!LinkProgram(vertShader, fontShader, &fontProgram))
+        return false;
+
     glDeleteShader(vertShader);
     glDeleteShader(fragShader);
+    glDeleteShader(fontShader);
 
+    window->glData.fontProgram = fontProgram;
     window->glData.shaderProgram = program;
     window->glData.projectionLoc = glGetUniformLocation(program, "viewProj");
     window->glData.tintLoc = glGetUniformLocation(program, "tint");
@@ -102,9 +126,9 @@ static bool InitGLData(Window *window)
     const uint8_t whiteBytes[] = { 255, 255, 255, 255 };
     glCreateTextures(GL_TEXTURE_2D, 1, &window->glData.whiteTexture);
     glTextureStorage2D(window->glData.whiteTexture, 1, GL_RGBA8, 1, 1);
+    glTextureSubImage2D(window->glData.whiteTexture, 0, 0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, whiteBytes);
     glTextureParameteri(window->glData.whiteTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTextureParameteri(window->glData.whiteTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTextureSubImage2D(window->glData.whiteTexture, 0, 0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, whiteBytes);
 
     const GLbitfield 
 	mapping_flags = GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT,
@@ -127,6 +151,15 @@ static bool InitGLData(Window *window)
     glVertexArrayAttribBinding(window->glData.vertexFormat, 2, 0);
     glVertexArrayVertexBuffer(window->glData.vertexFormat, 0, window->glData.vertexBuffer, 0, sizeof(Vertex));
 
+    Font *font = &window->defaultFont;
+    FontLoadMem(gFontData, gFontSize, STBTT_POINT_SIZE(40), font);
+
+    glCreateTextures(GL_TEXTURE_2D, 1, &font->texture);
+    glTextureStorage2D(font->texture, 1, GL_R8, font->width, font->height);
+    glTextureSubImage2D(font->texture, 0, 0, 0, font->width, font->height, GL_RED, GL_UNSIGNED_BYTE, font->bitmap);
+    glTextureParameteri(font->texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(font->texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
     return true;
 }
 
@@ -136,10 +169,14 @@ static void DestroyGLData(Window *window)
     GLuint renderbuffers[] = { window->glData.colorRb, window->glData.depthRb };
     glDeleteRenderbuffers(2, renderbuffers);
     glDeleteTextures(1, &window->glData.whiteTexture);
-    glDeleteProgram(window->glData.shaderProgram);
-    glUnmapNamedBuffer(window->glData.vertexBuffer);
-    glDeleteBuffers(1, &window->glData.vertexBuffer);
+    glDeleteTextures(1, &window->defaultFont.texture);
+    free(window->defaultFont.bitmap);
+    free(window->defaultFont.packedchars);
+    free(window->defaultFont.ttf);
     glDeleteVertexArrays(1, &window->glData.vertexFormat);
+    glDeleteProgram(window->glData.shaderProgram);
+    glDeleteProgram(window->glData.fontProgram);
+    glDeleteBuffers(1, &window->glData.vertexBuffer);
 }
 
 static void ResizeTextures(Window *window)
@@ -224,10 +261,14 @@ static void Update(Window *window)
         painter.height = window->height;
         painter.clip = RectangleIntersection((Rectangle){ .r = window->width, .b = window->height }, window->updateRegion);
         painter.framebuffer = gldata.framebuffer;
+        painter.defaultFont = &window->defaultFont;
+        painter.program = gldata.shaderProgram;
+        painter.fontProgram = gldata.fontProgram;
 
         glBindFramebuffer(GL_FRAMEBUFFER, gldata.framebuffer);
         glBindVertexArray(gldata.vertexFormat);
-        glVertexArrayVertexBuffer(gldata.vertexFormat, 0, gldata.vertexBuffer, 0, sizeof(Vertex));
+        glUseProgram(gldata.fontProgram);
+        glUniformMatrix4fv(gldata.projectionLoc, 1, GL_FALSE, (float*)&window->projection.raw);
         glUseProgram(gldata.shaderProgram);
         glUniformMatrix4fv(gldata.projectionLoc, 1, GL_FALSE, (float*)&window->projection.raw);
 
@@ -416,7 +457,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
             
             glDisable(GL_SCISSOR_TEST);
             glClearNamedFramebufferfv(0, GL_COLOR, 0, (float[]){ 0, 1, 1, 1 });
-            glBlitNamedFramebuffer(window->glData.framebuffer, 0, 0, 0, window->width, window->height, 0, 0, window->width, window->height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+            glBlitNamedFramebuffer(window->glData.framebuffer, 0, 0, 0, window->width, window->height, 0, window->height, window->width, 0, GL_COLOR_BUFFER_BIT, GL_LINEAR);
             SwapBuffers(window->hdc);
             glEnable(GL_SCISSOR_TEST);
             EndPaint(hwnd, &paint);

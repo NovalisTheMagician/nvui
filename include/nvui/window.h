@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "nvui.h"
 #include "element.h"
+#include "font.h"
 #include "gltypes.h"
 
 #ifdef _WIN32
@@ -25,10 +26,10 @@
 typedef struct GLData
 {
     GLuint colorRb, depthRb, framebuffer;
-    GLuint shaderProgram, projectionLoc, tintLoc, textureLoc;
+    GLuint shaderProgram, fontProgram, projectionLoc, tintLoc, textureLoc;
     GLuint vertexFormat, vertexBuffer;
     Vertex *mappedVertexBuffer;
-    GLuint whiteTexture;
+    GLuint whiteTexture, fontTexture;
 } GLData;
 
 typedef struct Window
@@ -41,6 +42,8 @@ typedef struct Window
     mat4s projection;
 
     bool buffersNeedResize;
+
+    Font defaultFont;
 
 #ifdef _WIN32
     HWND hwnd;

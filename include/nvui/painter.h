@@ -3,6 +3,7 @@
 #include "util.h"
 #include "color.h"
 #include "gltypes.h"
+#include "font.h"
 
 #include "glad/gl.h"
 
@@ -29,6 +30,9 @@ typedef struct Painter
     StrokeStyle strokeStyle;
     FillStyle fillStyle;
 
+    Font *defaultFont, *font;
+
+    GLuint fontProgram, program;
     GLuint framebuffer, textureLoc, tintLoc, defaultTexture;
     Vertex *vertexMap;
 
@@ -38,4 +42,7 @@ typedef struct Painter
 NVAPI void PainterDrawLine(Painter *painter, int x1, int y1, int x2, int y2);
 NVAPI void PainterDrawRect(Painter *painter, Rectangle rectangle);
 NVAPI void PainterFillRect(Painter *painter, Rectangle rectangle);
+NVAPI void PainterDrawString(Painter *painter, Rectangle bounds, const char *string, size_t bytes, bool centerAlign);
 NVAPI void PainterClear(Painter *painter);
+
+NVAPI void PainterDebug(Painter *painter);
