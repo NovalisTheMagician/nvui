@@ -15,11 +15,13 @@
 #undef Rectangle
 #elif defined(__linux__)
 #define Window X11Window
+#define Font X11Font
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
 #include <X11/cursorfont.h>
 #include "glad/glx.h"
+#undef Font
 #undef Window
 #endif
 
