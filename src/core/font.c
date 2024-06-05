@@ -100,10 +100,14 @@ NVAPI RectangleF FontMeasureString(Font *font, FontStyle style, const char *stri
     float x = 0, y = 0;
     for(size_t i = 0; i < bytes; ++i)
     {
+        uint32_t codepoint = string[i];
+        if(codepoint < 32 || codepoint > 127)
+            codepoint = '?';
+
         stbtt_aligned_quad quad = {};
-        stbtt_GetPackedQuad(data->packedchars, font->width, font->height, string[i], &x, &y, &quad, true);
+        stbtt_GetPackedQuad(data->packedchars, font->width, font->height, codepoint - 32, &x, &y, &quad, true);
         if(i < bytes-1)
-            x += FontKernAdvance(font, style, string[i], string[i+1]);
+            x += FontKernAdvance(font, style, codepoint, string[i+1]);
         rect = RectangleFBounding(rect, (RectangleF){ .l = quad.x0, .r = quad.x1, .t = quad.y0, .b = quad.y1 });
     }
     return rect;

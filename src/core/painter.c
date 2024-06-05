@@ -97,14 +97,6 @@ NVAPI void PainterDrawString(Painter *painter, Rectangle bounds, const char *str
     glDrawArrays(GL_TRIANGLES, startVertex, 6 * bytes);
     glUseProgram(painter->program);
     glDisable(GL_BLEND);
-
-    if(centerAlign)
-    {
-        float offsetX = round((bounds.r - bounds.l - rect.r - rect.l) / 2);
-        float offsetY = round((bounds.b - bounds.t - rect.b - rect.t) / 2);
-        painter->backColor = COLOR_GREEN;
-        PainterDrawRect(painter, (Rectangle){ .l = rect.l + offsetX, .r = rect.r + offsetX, .t = rect.t + offsetY, .b = rect.b + offsetY });
-    }
 }
 
 NVAPI void PainterClear(Painter *painter)
