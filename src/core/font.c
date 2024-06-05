@@ -1,7 +1,7 @@
 #include "nvui/font.h"
 
-//#define STB_RECT_PACK_IMPLEMENTATION
-//#include <stb/stb_rect_pack.h>
+#define STB_RECT_PACK_IMPLEMENTATION
+#include <stb/stb_rect_pack.h>
 #define STB_TRUETYPE_IMPLEMENTATION
 #include <stb/stb_truetype.h>
 
@@ -47,7 +47,7 @@ NVAPI bool FontLoadMem(const uint8_t *data, size_t len, Font *font, FontStyle st
 
     stbtt_pack_context ttctx = {};
     stbtt_PackBegin(&ttctx, font->styles[style].bitmap, font->width, font->height, 0, 1, NULL);
-    stbtt_PackSetOversampling(&ttctx, 2, 2);
+    stbtt_PackSetOversampling(&ttctx, 8, 8);
     stbtt_PackFontRange(&ttctx, font->styles[style].ttf, 0, STBTT_POINT_SIZE(font->size), 32, 128, font->styles[style].packedchars);
     stbtt_PackEnd(&ttctx);
 
@@ -83,7 +83,7 @@ NVAPI RectangleF FontGetQuad(Font *font, FontStyle style, uint32_t codepoint, fl
         codepoint = '?';
 
     stbtt_aligned_quad quad = {};
-    stbtt_GetPackedQuad(data->packedchars, font->width, font->height, codepoint - 32, x, y, &quad, true);
+    stbtt_GetPackedQuad(data->packedchars, font->width, font->height, codepoint - 32, x, y, &quad, false);
 
     *u0 = quad.s0;
     *v0 = quad.t0;
@@ -105,7 +105,7 @@ NVAPI RectangleF FontMeasureString(Font *font, FontStyle style, const char *stri
             codepoint = '?';
 
         stbtt_aligned_quad quad = {};
-        stbtt_GetPackedQuad(data->packedchars, font->width, font->height, codepoint - 32, &x, &y, &quad, true);
+        stbtt_GetPackedQuad(data->packedchars, font->width, font->height, codepoint - 32, &x, &y, &quad, false);
         if(i < bytes-1)
             x += FontKernAdvance(font, style, codepoint, string[i+1]);
         rect = RectangleFBounding(rect, (RectangleF){ .l = quad.x0, .r = quad.x1, .t = quad.y0, .b = quad.y1 });
