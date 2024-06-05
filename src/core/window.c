@@ -63,7 +63,6 @@ static bool InitGLData(Window *window)
         "out vec4 outColor;\n"
         "out vec2 outTexCoords;\n"
         "uniform mat4 viewProj;\n"
-        "uniform vec2 coordOffset;\n"
         "void main() {\n"
         "   gl_Position = viewProj * vec4(inPosition, 0, 1);\n"
         "   outColor = inColor;\n"

@@ -1,4 +1,5 @@
 #include "nvui/painter.h"
+#include "nvui/util.h"
 
 #include <tgmath.h>
 
@@ -19,15 +20,15 @@ NVAPI void PainterDrawRect(Painter *painter, Rectangle rectangle)
 
     painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = (float)rectangle.l, .y = (float)rectangle.t }, .color = {{ 1, 1, 1, 1 }} };
     painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = (float)rectangle.r, .y = (float)rectangle.t }, .color = {{ 1, 1, 1, 1 }} };
-    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = (float)rectangle.r, .y = (float)rectangle.t }, .color = {{ 1, 1, 1, 1 }} };
+    //painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = (float)rectangle.r, .y = (float)rectangle.t }, .color = {{ 1, 1, 1, 1 }} };
     painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = (float)rectangle.r, .y = (float)rectangle.b }, .color = {{ 1, 1, 1, 1 }} };
-    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = (float)rectangle.r, .y = (float)rectangle.b }, .color = {{ 1, 1, 1, 1 }} };
+    //painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = (float)rectangle.r, .y = (float)rectangle.b }, .color = {{ 1, 1, 1, 1 }} };
     painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = (float)rectangle.l, .y = (float)rectangle.b }, .color = {{ 1, 1, 1, 1 }} };
-    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = (float)rectangle.l, .y = (float)rectangle.b }, .color = {{ 1, 1, 1, 1 }} };
-    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = (float)rectangle.l, .y = (float)rectangle.t }, .color = {{ 1, 1, 1, 1 }} };
+    //painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = (float)rectangle.l, .y = (float)rectangle.b }, .color = {{ 1, 1, 1, 1 }} };
+    //painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = (float)rectangle.l, .y = (float)rectangle.t }, .color = {{ 1, 1, 1, 1 }} };
 
     glUniform4fv(painter->tintLoc, 1, (float*)&painter->backColor);
-    glDrawArrays(GL_LINES, startVertex, 8);
+    glDrawArrays(GL_LINE_LOOP, startVertex, 4);
 }
 
 NVAPI void PainterFillRect(Painter *painter, Rectangle rectangle)
@@ -60,9 +61,10 @@ NVAPI void PainterDrawString(Painter *painter, Rectangle bounds, const char *str
 
     float x = (float)bounds.l;
     float y = (float)bounds.t;
+
+    RectangleF rect = FontMeasureString(font, style, string, bytes);
     if(centerAlign)
     {
-        RectangleF rect = FontMeasureString(font, style, string, bytes);
         x += round((bounds.r - bounds.l - rect.r - rect.l) / 2);
         y += round((bounds.b - bounds.t - rect.b - rect.t) / 2);
     }
@@ -95,6 +97,14 @@ NVAPI void PainterDrawString(Painter *painter, Rectangle bounds, const char *str
     glDrawArrays(GL_TRIANGLES, startVertex, 6 * bytes);
     glUseProgram(painter->program);
     glDisable(GL_BLEND);
+
+    if(centerAlign)
+    {
+        float offsetX = round((bounds.r - bounds.l - rect.r - rect.l) / 2);
+        float offsetY = round((bounds.b - bounds.t - rect.b - rect.t) / 2);
+        painter->backColor = COLOR_GREEN;
+        PainterDrawRect(painter, (Rectangle){ .l = rect.l + offsetX, .r = rect.r + offsetX, .t = rect.t + offsetY, .b = rect.b + offsetY });
+    }
 }
 
 NVAPI void PainterClear(Painter *painter)
