@@ -31,6 +31,7 @@ typedef struct Painter
     FillStyle fillStyle;
 
     Font *defaultFont, *font;
+    FontStyle fontStyle;
 
     GLuint fontProgram, program;
     GLuint framebuffer, textureLoc, tintLoc, defaultTexture;
@@ -44,5 +45,3 @@ NVAPI void PainterDrawRect(Painter *painter, Rectangle rectangle);
 NVAPI void PainterFillRect(Painter *painter, Rectangle rectangle);
 NVAPI void PainterDrawString(Painter *painter, Rectangle bounds, const char *string, size_t bytes, bool centerAlign);
 NVAPI void PainterClear(Painter *painter);
-
-NVAPI void PainterDebug(Painter *painter);

@@ -36,6 +36,15 @@ NVAPI bool RectangleContains(Rectangle a, int x, int y)
     return a.l <= x && a.r > x && a.t <= y && a.b > y;
 }
 
+NVAPI RectangleF RectangleFBounding(RectangleF a, RectangleF b)
+{
+    if(a.l > b.l) a.l = b.l;
+    if(a.t > b.t) a.t = b.t;
+    if(a.r < b.r) a.r = b.r;
+    if(a.b < b.b) a.b = b.b;
+    return a;
+}
+
 NVAPI void StringCopy(char **dest, size_t *destBytes, const char *source, ptrdiff_t sourceBytes)
 {
     if(sourceBytes == -1) sourceBytes = strlen(source);

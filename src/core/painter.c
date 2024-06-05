@@ -1,5 +1,7 @@
 #include "nvui/painter.h"
 
+#include <tgmath.h>
+
 NVAPI void PainterDrawLine(Painter *painter, int x1, int y1, int x2, int y2)
 {
     size_t startVertex = painter->vertIndex;
@@ -49,13 +51,20 @@ NVAPI void PainterDrawString(Painter *painter, Rectangle bounds, const char *str
 {
     size_t startVertex = painter->vertIndex;
     Font *font = painter->font ? painter->font : painter->defaultFont;
+    FontStyle style = painter->fontStyle;
+
+    if(!font->hasStyles[style])
+    {
+        style = Regular;
+    }
+
     float x = (float)bounds.l;
     float y = (float)bounds.t;
     if(centerAlign)
     {
-        Rectangle rect = FontMeasureString(font, string, bytes);
-        x += (bounds.r - bounds.l - rect.l - rect.r) / 2.0f;
-        y += (bounds.b - bounds.t - rect.b - rect.t) / 2.0f;
+        RectangleF rect = FontMeasureString(font, style, string, bytes);
+        x += round((bounds.r - bounds.l - rect.r - rect.l) / 2);
+        y += round((bounds.b - bounds.t - rect.b - rect.t) / 2);
     }
 
     for(size_t i = 0; i < bytes; ++i)
@@ -63,7 +72,7 @@ NVAPI void PainterDrawString(Painter *painter, Rectangle bounds, const char *str
         uint8_t ch = string[i];
 
         float u0, v0, u1, v1;
-        RectangleF posRect = FontGetQuad(font, ch, &x, &y, &u0, &v0, &u1, &v1);
+        RectangleF posRect = FontGetQuad(font, style, ch, &x, &y, &u0, &v0, &u1, &v1);
 
         painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = posRect.l, .y = posRect.t }, .color = {{ 1, 1, 1, 1 }}, .texcoord = { .x = u0, .y = v0 } };
         painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = posRect.r, .y = posRect.t }, .color = {{ 1, 1, 1, 1 }}, .texcoord = { .x = u1, .y = v0 } };
@@ -72,33 +81,23 @@ NVAPI void PainterDrawString(Painter *painter, Rectangle bounds, const char *str
         painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = posRect.r, .y = posRect.t }, .color = {{ 1, 1, 1, 1 }}, .texcoord = { .x = u1, .y = v0 } };
         painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = posRect.r, .y = posRect.b }, .color = {{ 1, 1, 1, 1 }}, .texcoord = { .x = u1, .y = v1 } };
         painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = posRect.l, .y = posRect.b }, .color = {{ 1, 1, 1, 1 }}, .texcoord = { .x = u0, .y = v1 } };
+
+        if(i < bytes - 1)
+            x += FontKernAdvance(font, painter->fontStyle, ch, string[i+1]);
     }
 
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glUseProgram(painter->fontProgram);
     glUniform1i(painter->textureLoc, 0);
     glUniform4fv(painter->tintLoc, 1, (float*)&painter->backColor);
-    glBindTextureUnit(0, font->texture);
+    glBindTextureUnit(0, font->styles[style].texture);
     glDrawArrays(GL_TRIANGLES, startVertex, 6 * bytes);
     glUseProgram(painter->program);
+    glDisable(GL_BLEND);
 }
 
 NVAPI void PainterClear(Painter *painter)
 {
     glClearNamedFramebufferfv(painter->framebuffer, GL_COLOR, 0, (float*)&painter->backColor);
-}
-
-NVAPI void PainterDebug(Painter *painter)
-{
-    size_t startVertex = painter->vertIndex;
-    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = (float)0, .y = (float)0 }, .color = {{ 1, 1, 1, 1 }}, .texcoord = {{ 0, 0 }} };
-    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = (float)painter->width, .y = (float)0 }, .color = {{ 1, 1, 1, 1 }}, .texcoord = {{ 1, 0 }} };
-    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = (float)0, .y = (float)painter->height }, .color = {{ 1, 1, 1, 1 }}, .texcoord = {{ 0, 1 }} };
-
-    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = (float)painter->width, .y = (float)0 }, .color = {{ 1, 1, 1, 1 }}, .texcoord = {{ 1, 0 }} };
-    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = (float)painter->width, .y = (float)painter->height }, .color = {{ 1, 1, 1, 1 }}, .texcoord = {{ 1, 1 }} };
-    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = (float)0, .y = (float)painter->height }, .color = {{ 1, 1, 1, 1 }}, .texcoord = {{ 0, 1 }} };
-
-    glBindTextureUnit(0, painter->defaultFont->texture);
-    glDrawArrays(GL_TRIANGLES, startVertex, 6);
-    glBindTextureUnit(0, painter->defaultTexture);
 }

@@ -19,6 +19,8 @@ NVAPI Rectangle RectangleBounding(Rectangle a, Rectangle b);
 NVAPI bool RectangleEquals(Rectangle a, Rectangle b);
 NVAPI bool RectangleContains(Rectangle r, int x, int y);
 
+NVAPI RectangleF RectangleFBounding(RectangleF a, RectangleF b);
+
 NVAPI void StringCopy(char **dest, size_t *destBytes, const char *source, ptrdiff_t sourceBytes);
 
 #define Min(a, b) ({ __typeof__(a) a_ = a; __typeof__(b) b_ = b; a_ < b_ ? a_ : b_; })

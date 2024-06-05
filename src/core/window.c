@@ -89,8 +89,8 @@ static bool InitGLData(Window *window)
         "uniform sampler2D tex;\n"
         "uniform vec4 tint;\n"
         "void main() {\n"
-        "   if(texture(tex, outTexCoords).r <= 0.02) discard;"
-        "   fragColor = outColor * tint;\n"
+        "   float v = texture(tex, outTexCoords).r;\n"
+        "   fragColor = outColor * vec4(tint.rgb, tint.a * v);\n"
         "}\n";
 
     GLuint vertShader = glCreateShader(GL_VERTEX_SHADER);
@@ -152,13 +152,11 @@ static bool InitGLData(Window *window)
     glVertexArrayVertexBuffer(window->glData.vertexFormat, 0, window->glData.vertexBuffer, 0, sizeof(Vertex));
 
     Font *font = &window->defaultFont;
-    FontLoadMem(gFontData, gFontSize, STBTT_POINT_SIZE(40), font);
-
-    glCreateTextures(GL_TEXTURE_2D, 1, &font->texture);
-    glTextureStorage2D(font->texture, 1, GL_R8, font->width, font->height);
-    glTextureSubImage2D(font->texture, 0, 0, 0, font->width, font->height, GL_RED, GL_UNSIGNED_BYTE, font->bitmap);
-    glTextureParameteri(font->texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(font->texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    FontInit(font, 18);
+    FontLoadMem(gFontSerifRegularData, gFontSerifRegularSize, font, Regular);
+    FontLoadMem(gFontSerifItalicData, gFontSerifItalicSize, font, Italic);
+    FontLoadMem(gFontSerifBoldData, gFontSerifBoldSize, font, Bold);
+    FontLoadMem(gFontSerifBoldItalicData, gFontSerifBoldItalicSize, font, BoldItalic);
 
     return true;
 }
@@ -169,14 +167,11 @@ static void DestroyGLData(Window *window)
     GLuint renderbuffers[] = { window->glData.colorRb, window->glData.depthRb };
     glDeleteRenderbuffers(2, renderbuffers);
     glDeleteTextures(1, &window->glData.whiteTexture);
-    glDeleteTextures(1, &window->defaultFont.texture);
-    free(window->defaultFont.bitmap);
-    free(window->defaultFont.packedchars);
-    free(window->defaultFont.ttf);
     glDeleteVertexArrays(1, &window->glData.vertexFormat);
     glDeleteProgram(window->glData.shaderProgram);
     glDeleteProgram(window->glData.fontProgram);
     glDeleteBuffers(1, &window->glData.vertexBuffer);
+    FontFree(&window->defaultFont);
 }
 
 static void ResizeTextures(Window *window)
@@ -262,6 +257,7 @@ static void Update(Window *window)
         painter.clip = RectangleIntersection((Rectangle){ .r = window->width, .b = window->height }, window->updateRegion);
         painter.framebuffer = gldata.framebuffer;
         painter.defaultFont = &window->defaultFont;
+        painter.fontStyle = Regular;
         painter.program = gldata.shaderProgram;
         painter.fontProgram = gldata.fontProgram;
 
