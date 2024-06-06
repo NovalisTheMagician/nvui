@@ -68,3 +68,15 @@ NVAPI void ElementRepaint(Element *element, Rectangle *region)
         }
     }
 }
+
+NVAPI Element* ElementFindByPoint(Element *element, int x, int y)
+{
+    for(size_t i = 0; i < element->childCount; ++i)
+    {
+        if(RectangleContains(element->children[i]->clip, x, y))
+        {
+            return ElementFindByPoint(element->children[i], x, y);
+        }
+    }
+    return element;
+}

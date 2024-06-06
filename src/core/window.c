@@ -214,6 +214,102 @@ static int WindowMessage(Element *element, Message message, int di, void *dp)
     return 0;
 }
 
+static void InvalidateWindow(Window *window);
+
+static void WindowSetPressed(Window *window, Element *element, int button)
+{
+    Element *previous = window->pressed;
+
+    window->pressed = element;
+    window->pressedButton = button;
+
+    if(previous) ElementMessage(previous, MSG_UPDATE, UPDATE_PRESSED, NULL);
+    if(element) ElementMessage(element, MSG_UPDATE, UPDATE_PRESSED, NULL);
+}
+
+static void WindowInputEvent(Window *window, Message message, int di, void *dp)
+{
+    if(window->pressed)
+    {
+        if(message == MSG_MOUSE_MOVE)
+        {
+            ElementMessage(window->pressed, MSG_MOUSE_DRAG, di, dp);
+        }
+        else if(message == MSG_LEFT_UP && window->pressedButton == 1)
+        {
+            if(window->hovered == window->pressed)
+            {
+                ElementMessage(window->pressed, MSG_CLICKED, di, dp);
+            }
+
+            ElementMessage(window->pressed, MSG_LEFT_UP, di, dp);
+            WindowSetPressed(window, NULL, 1);
+        }
+        else if(message == MSG_MIDDLE_UP && window->pressedButton == 2)
+        {
+            ElementMessage(window->pressed, MSG_MIDDLE_UP, di, dp);
+            WindowSetPressed(window, NULL, 2);
+        }
+        else if(message == MSG_RIGHT_UP && window->pressedButton == 3)
+        {
+            ElementMessage(window->pressed, MSG_RIGHT_UP, di, dp);
+            WindowSetPressed(window, NULL, 3);
+        }
+    }
+
+    if(window->pressed)
+    {
+        bool inside = RectangleContains(window->pressed->clip, window->cursorX, window->cursorY);
+
+        if(inside && window->hovered == &window->e)
+        {
+            window->hovered = window->pressed;
+            ElementMessage(window->pressed, MSG_UPDATE, UPDATE_HOVERED, NULL);
+        }
+        else if(!inside && window->hovered == window->pressed)
+        {
+            window->hovered = &window->e;
+            ElementMessage(window->pressed, MSG_UPDATE, UPDATE_HOVERED, NULL);
+        }
+    }
+    else
+    {
+        Element *hovered = ElementFindByPoint(&window->e, window->cursorX, window->cursorY);
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wswitch"
+        switch(message)
+        {
+        case MSG_MOUSE_MOVE:
+            ElementMessage(hovered, MSG_MOUSE_MOVE, di, dp);
+            break;
+        case MSG_LEFT_DOWN:
+            WindowSetPressed(window, hovered, 1);
+            ElementMessage(hovered, message, di, dp);
+            break;
+        case MSG_MIDDLE_DOWN:
+            WindowSetPressed(window, hovered, 2);
+            ElementMessage(hovered, message, di, dp);
+            break;
+        case MSG_RIGHT_DOWN:
+            WindowSetPressed(window, hovered, 3);
+            ElementMessage(hovered, message, di, dp);
+            break;
+        }
+#pragma GCC diagnostic pop
+
+        if(hovered != window->hovered)
+        {
+            Element *previous = window->hovered;
+            window->hovered = hovered;
+            ElementMessage(previous, MSG_UPDATE, UPDATE_HOVERED, NULL);
+            ElementMessage(window->hovered, MSG_UPDATE, UPDATE_HOVERED, NULL);
+        }
+    }
+
+    InvalidateWindow(window);
+}
+
 static void WindowEndPaint(Window *window, Painter *painter);
 
 static void ElementPaint(Element *element, Painter *painter)
@@ -402,7 +498,11 @@ static bool LoadGLFunctions(void)
 
 static void WindowEndPaint(Window *window, Painter *painter)
 {
-    
+}
+
+static void InvalidateWindow(Window *window)
+{
+    InvalidateRect(window->hwnd, NULL, false);
 }
 
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -436,6 +536,82 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
                 ElementMessage(&window->e, MSG_LAYOUT, 0, NULL);
                 //InvalidateRect(element->window->hwnd, NULL, false);
             }
+        }
+        break;
+    case WM_MOUSEMOVE:
+        {
+            if(!window->trackingLeave)
+            {
+                window->trackingLeave = true;
+                TRACKMOUSEEVENT leave = 
+                {
+                    .cbSize = sizeof leave,
+                    .dwFlags = TME_LEAVE,
+                    .hwndTrack = window->hwnd
+                };
+                TrackMouseEvent(&leave);
+            }
+
+            POINT cursor = {};
+            GetCursorPos(&cursor);
+            ScreenToClient(window->hwnd, &cursor);
+            if(!(window->prevCursorX == cursor.x && window->prevCursorY == cursor.y))
+            {
+                window->prevCursorX = cursor.x;
+                window->prevCursorY = cursor.y;
+                window->cursorX = cursor.x;
+                window->cursorY = cursor.y;
+                WindowInputEvent(window, MSG_MOUSE_MOVE, 0, NULL);
+            }
+        }
+        break;
+    case WM_MOUSELEAVE:
+        {
+            window->trackingLeave = false;
+
+            if(!window->pressed)
+            {
+                window->cursorX = -1;
+                window->cursorY = -1;
+            }
+
+            WindowInputEvent(window, MSG_MOUSE_MOVE, 0, NULL);
+        }
+        break;
+    case WM_LBUTTONDOWN:
+        {
+            SetCapture(window->hwnd);
+            WindowInputEvent(window, MSG_LEFT_DOWN, 0, NULL);
+        }
+        break;
+    case WM_LBUTTONUP:
+        {
+            if(window->pressedButton == 1) ReleaseCapture();
+            WindowInputEvent(window, MSG_LEFT_UP, 0, NULL);
+        }
+        break;
+    case WM_MBUTTONDOWN:
+        {
+            SetCapture(window->hwnd);
+            WindowInputEvent(window, MSG_MIDDLE_DOWN, 0, NULL);
+        }
+        break;
+    case WM_MBUTTONUP:
+        {
+            if(window->pressedButton == 2) ReleaseCapture();
+            WindowInputEvent(window, MSG_MIDDLE_UP, 0, NULL);
+        }
+        break;
+    case WM_RBUTTONDOWN:
+        {
+            SetCapture(window->hwnd);
+            WindowInputEvent(window, MSG_RIGHT_DOWN, 0, NULL);
+        }
+        break;
+    case WM_RBUTTONUP:
+        {
+            if(window->pressedButton == 3) ReleaseCapture();
+            WindowInputEvent(window, MSG_RIGHT_UP, 0, NULL);
         }
         break;
     case WM_PAINT:
@@ -512,6 +688,7 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
     if(!window) return NULL;
 
     window->e.window = window;
+    window->hovered = &window->e;
 
     global.windowCount++;
     global.windows = realloc(global.windows, sizeof(Window*) * global.windowCount);
@@ -621,6 +798,12 @@ static void WindowEndPaint(Window *window, Painter *painter)
 {
 }
 
+static void InvalidateWindow(Window *window)
+{
+    XClearArea(global.display, window->window, 0, 0, 1, 1, true);
+    XFlush(global.display);
+}
+
 static bool LoadGLFunctions(void)
 {
     if(!glFuncsLoaded)
@@ -671,6 +854,7 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
     if(!window) return NULL;
 
     window->e.window = window;
+    window->hovered = &window->e;
 
     window->width = width;
     window->height = height;
@@ -815,8 +999,43 @@ NVAPI int MessageLoop(void)
                     window->e.clip = (Rectangle){ .r = window->width, .b = window->height };
 
                     ElementMessage(&window->e, MSG_LAYOUT, 0, NULL);
-                    //XClearArea(global.display, window->window, 0, 0, 1, 1, true);
-                    //XFlush(global.display);
+                }
+            }
+            break;
+        case MotionNotify:
+            {
+                Window *window = FindWindow(event.xmotion.window);
+                if(!window) continue;
+                window->cursorX = event.xmotion.x;
+                window->cursorY = event.xmotion.y;
+                WindowInputEvent(window, MSG_MOUSE_MOVE, 0, NULL);
+            }
+            break;
+        case LeaveNotify:
+            {
+                Window *window = FindWindow(event.xcrossing.window);
+                if(!window) continue;
+
+                if(!window->pressed)
+                {
+                    window->cursorX = -1;
+                    window->cursorY = -1;
+                }
+                
+                WindowInputEvent(window, MSG_MOUSE_MOVE, 0, NULL);
+            }
+            break;
+        case ButtonPress:
+        case ButtonRelease:
+            {
+                Window *window = FindWindow(event.xbutton.window);
+                if(!window) continue;
+                window->cursorX = event.xbutton.x;
+                window->cursorY = event.xbutton.y;
+
+                if(event.xbutton.button >= 1 && event.xbutton.button <= 3)
+                {
+                    WindowInputEvent(window, (Message)((event.type == ButtonPress ? MSG_LEFT_DOWN : MSG_LEFT_UP) + event.xbutton.button * 2 - 2), 0, NULL);
                 }
             }
             break;

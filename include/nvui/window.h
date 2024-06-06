@@ -39,12 +39,13 @@ typedef struct Window
     Element e;
     int width, height;
     Rectangle updateRegion;
+    int cursorX, cursorY;
+    Element *hovered, *pressed;
+    int pressedButton;
 
     GLData glData;
     mat4s projection;
-
     bool buffersNeedResize;
-
     Font defaultFont;
 
 #ifdef _WIN32
@@ -52,6 +53,7 @@ typedef struct Window
     HGLRC hglrc;
     HDC hdc;
     bool trackingLeave;
+    int prevCursorX, prevCursorY;
 #elif __linux__
     X11Window window;
     GLXContext context;
