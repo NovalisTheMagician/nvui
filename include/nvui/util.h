@@ -3,6 +3,7 @@
 #include "nvui.h"
 
 #include <stddef.h>
+#include <sys/types.h>
 typedef struct Rectangle
 {
     int l, r, t, b;
@@ -21,7 +22,7 @@ NVAPI bool RectangleContains(Rectangle r, int x, int y);
 
 NVAPI RectangleF RectangleFBounding(RectangleF a, RectangleF b);
 
-NVAPI void StringCopy(char **dest, size_t *destBytes, const char *source, ptrdiff_t sourceBytes);
+NVAPI void StringCopy(char **dest, size_t *destBytes, const char *source, ssize_t sourceBytes);
 
 #define Min(a, b) ({ __typeof__(a) a_ = a; __typeof__(b) b_ = b; a_ < b_ ? a_ : b_; })
 #define Max(a, b) ({ __typeof__(a) a_ = a; __typeof__(b) b_ = b; a_ > b_ ? a_ : b_; })

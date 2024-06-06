@@ -214,7 +214,7 @@ static int WindowMessage(Element *element, Message message, int di, void *dp)
     return 0;
 }
 
-static void InvalidateWindow(Window *window);
+void InvalidateWindow(Window *window);
 
 static void WindowSetPressed(Window *window, Element *element, int button)
 {
@@ -500,7 +500,7 @@ static void WindowEndPaint(Window *window, Painter *painter)
 {
 }
 
-static void InvalidateWindow(Window *window)
+void InvalidateWindow(Window *window)
 {
     InvalidateRect(window->hwnd, NULL, false);
 }
@@ -798,7 +798,7 @@ static void WindowEndPaint(Window *window, Painter *painter)
 {
 }
 
-static void InvalidateWindow(Window *window)
+void InvalidateWindow(Window *window)
 {
     XClearArea(global.display, window->window, 0, 0, 1, 1, true);
     XFlush(global.display);

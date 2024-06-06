@@ -16,6 +16,7 @@ typedef enum Message
     MSG_LAYOUT,
     MSG_PAINT,
     MSG_UPDATE,
+
     MSG_LEFT_DOWN,
     MSG_LEFT_UP,
     MSG_MIDDLE_DOWN,
@@ -25,6 +26,9 @@ typedef enum Message
     MSG_MOUSE_MOVE,
     MSG_MOUSE_DRAG,
     MSG_CLICKED,
+
+    MSG_BUTTON_GET_COLOR,
+
     MSG_USER
 } Message;
 

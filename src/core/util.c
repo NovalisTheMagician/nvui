@@ -45,7 +45,7 @@ NVAPI RectangleF RectangleFBounding(RectangleF a, RectangleF b)
     return a;
 }
 
-NVAPI void StringCopy(char **dest, size_t *destBytes, const char *source, ptrdiff_t sourceBytes)
+NVAPI void StringCopy(char **dest, size_t *destBytes, const char *source, ssize_t sourceBytes)
 {
     if(sourceBytes == -1) sourceBytes = strlen(source);
     *dest = realloc(*dest, sourceBytes);

@@ -47,6 +47,8 @@ NVAPI void ElementMove(Element *element, Rectangle bounds, bool alwaysLayout)
     }
 }
 
+void InvalidateWindow(Window *window);
+
 NVAPI void ElementRepaint(Element *element, Rectangle *region)
 {
     if(!region)
@@ -66,6 +68,8 @@ NVAPI void ElementRepaint(Element *element, Rectangle *region)
         {
             element->window->updateRegion = r;
         }
+
+        //InvalidateWindow(element->window);
     }
 }
 

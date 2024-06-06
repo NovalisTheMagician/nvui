@@ -1,59 +1,55 @@
 #include <nvui/window.h>
 #include <nvui/painter.h>
+#include <nvui/widgets.h>
 #include <stdio.h>
 #include <string.h>
 
-Element *parentElement, *childElement;
+Button *myButton;
+Label *myLabel;
+int counter = 0;
 
-int ParentElementMessage(Element *element, Message message, int di, void *dp) {
-	if (message == MSG_PAINT) {
+void UpdateLabel(void) {
+	char buffer[50];
+	snprintf(buffer, sizeof(buffer), "Click count: %d", counter);
+	LabelSetContent(myLabel, buffer, -1);
+	ElementRepaint(&myLabel->e, NULL);
+}
+
+int LayoutElementMessage(Element *element, Message message, int di, void *dp) {
+	(void) di;
+
+	if (message == MSG_LAYOUT) {
+		ElementMove(&myButton->e, (Rectangle){10, 200, 10, 40}, false);
+		ElementMove(&myLabel->e, (Rectangle){10, element->bounds.r - 10, 50, 90}, false);
+	} else if (message == MSG_PAINT) {
 		Painter *painter = dp;
 		painter->backColor = ColorFromInt(0xFFCCFF);
 		PainterFillRect(painter, element->bounds);
-	} else if (message == MSG_LAYOUT) {
-		fprintf(stderr, "layout with bounds (%d->%d;%d->%d)\n", element->bounds.l, element->bounds.r, element->bounds.t, element->bounds.b);
-		ElementMove(childElement, (Rectangle){50, 100, 50, 100}, false);
-	} else if (message == MSG_MOUSE_MOVE) {
-		fprintf(stderr, "mouse move at (%d,%d)\n", element->window->cursorX, element->window->cursorY);
-	} else if (message == MSG_MOUSE_DRAG) {
-		fprintf(stderr, "mouse drag at (%d,%d)\n", element->window->cursorX, element->window->cursorY);
-	} else if (message == MSG_UPDATE) {
-		fprintf(stderr, "update %d\n", di);
-	} else if (message == MSG_LEFT_DOWN) {
-		fprintf(stderr, "left down\n");
-	} else if (message == MSG_RIGHT_DOWN) {
-		fprintf(stderr, "right down\n");
-	} else if (message == MSG_MIDDLE_DOWN) {
-		fprintf(stderr, "middle down\n");
-	} else if (message == MSG_LEFT_UP) {
-		fprintf(stderr, "left up\n");
-	} else if (message == MSG_RIGHT_UP) {
-		fprintf(stderr, "right up\n");
-	} else if (message == MSG_MIDDLE_UP) {
-		fprintf(stderr, "middle up\n");
-	} else if (message == MSG_CLICKED) {
-		fprintf(stderr, "clicked\n");
 	}
 
 	return 0;
 }
 
-int ChildElementMessage(Element *element, Message message, int di, void *dp) {
+int MyButtonMessage(Element *element, Message message, int di, void *dp) {
+	(void) element;
 	(void) di;
+	(void) dp;
 
-	if (message == MSG_PAINT) {
-		Painter *painter = dp;
-		painter->backColor = ColorFromInt(0x444444);
-		PainterFillRect(painter, element->bounds);
+	if (message == MSG_CLICKED) {
+		counter++;
+		UpdateLabel();
 	}
-
+	
 	return 0;
 }
 
 int main() {
 	Initialize();
 	Window *window = WindowCreate("Hello, world", 300, 200);
-	parentElement = ElementCreate(sizeof(Element), &window->e, 0, ParentElementMessage);
-	childElement = ElementCreate(sizeof(Element), parentElement, 0, ChildElementMessage);
+	Element *layoutElement = ElementCreate(sizeof(Element), &window->e, 0, LayoutElementMessage);
+	myButton = ButtonCreate(layoutElement, 0, "Increment counter", -1);
+	myButton->e.messageUser = MyButtonMessage;
+	myLabel = LabelCreate(layoutElement, LABEL_CENTER, NULL, 0);
+	UpdateLabel();
 	return MessageLoop();
 }
