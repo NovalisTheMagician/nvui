@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../font.h"
+#include "font.h"
 #include "element.h"
 #include "../gltypes.h"
 

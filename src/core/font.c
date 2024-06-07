@@ -1,4 +1,4 @@
-#include "nvui/font.h"
+#include "nvui/private/font.h"
 
 #define STB_RECT_PACK_IMPLEMENTATION
 #include <stb/stb_rect_pack.h>

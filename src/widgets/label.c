@@ -10,7 +10,8 @@ static int LabelMessage(Element *element, Message message, int di, void *dp)
     if(message == MSG_PAINT)
     {
         Painter *painter = dp;
-        painter->backColor = COLOR_BLACK;
+        //painter->backColor = COLOR_BLACK;
+        PainterSetColor(painter, COLOR_BLACK);
         PainterDrawString(painter, element->bounds, label->text, label->textBytes, element->flags & LABEL_CENTER);
     }
 

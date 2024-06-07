@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 #include "nvui/private/window.h"
-#include "nvui/painter.h"
+#include "nvui/private/painter.h"
 #include "nvui/resources.h"
 
 #define WINDOW_MIN_WIDTH 200

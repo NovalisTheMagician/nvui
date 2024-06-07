@@ -18,23 +18,8 @@ typedef enum FontStyle
     NumStyles
 } FontStyle;
 
-typedef struct FontStyleData
-{
-    uint8_t *ttf;
-    uint8_t *bitmap;
-    GLuint texture;
-    stbtt_packedchar *packedchars;
-    stbtt_fontinfo fontinfo;
-} FontStyleData;
-
-typedef struct Font
-{
-    int width, height;
-    int size;
-
-    bool hasStyles[NumStyles];
-    FontStyleData styles[NumStyles];
-} Font;
+struct Font;
+typedef struct Font Font;
 
 NVAPI void FontInit(Font *font, int fontSize);
 NVAPI bool FontLoad(const char *fontFile, Font *font, FontStyle style);

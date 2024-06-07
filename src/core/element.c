@@ -97,3 +97,8 @@ NVAPI Rectangle ElementGetBounds(Element *element)
 {
     return element->bounds;
 }
+
+NVAPI Window* ElementGetWindow(Element *element)
+{
+    return element->window;
+}

@@ -5,6 +5,9 @@
 
 #include <stdint.h>
 
+struct Window;
+typedef struct Window Window;
+
 struct Element;
 typedef struct Element Element;
 
@@ -43,3 +46,4 @@ NVAPI void ElementRepaint(Element *element, Rectangle *region);
 NVAPI Element* ElementFindByPoint(Element *element, int x, int y);
 NVAPI void ElementSetUserHandler(Element *element, MessageHandler userClass);
 NVAPI Rectangle ElementGetBounds(Element *element);
+NVAPI Window* ElementGetWindow(Element *element);

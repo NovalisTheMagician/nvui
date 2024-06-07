@@ -2,10 +2,7 @@
 
 #include "util.h"
 #include "color.h"
-#include "gltypes.h"
 #include "font.h"
-
-#include "glad/gl.h"
 
 typedef enum StrokeStyle
 {
@@ -22,23 +19,14 @@ typedef enum FillStyle
     FILL_HATCH,
 } FillStyle;
 
-typedef struct Painter
-{
-    Rectangle clip;
-    int width, height;
-    Color backColor, frontColor;
-    StrokeStyle strokeStyle;
-    FillStyle fillStyle;
+struct Painter;
+typedef struct Painter Painter;
 
-    Font *defaultFont, *font;
-    FontStyle fontStyle;
-
-    GLuint fontProgram, program;
-    GLuint framebuffer, textureLoc, tintLoc, defaultTexture;
-    Vertex *vertexMap;
-
-    size_t vertIndex;
-} Painter;
+NVAPI void PainterReset(Painter *painter);
+NVAPI void PainterSetColor(Painter *painter, Color color);
+NVAPI void PainterSetLineWidth(Painter *painter, float width);
+NVAPI void PainterSetFont(Painter *painter, Font *font);
+NVAPI void PainterSetFontStyle(Painter *painter, FontStyle style);
 
 NVAPI void PainterDrawLine(Painter *painter, int x1, int y1, int x2, int y2);
 NVAPI void PainterDrawRect(Painter *painter, Rectangle rectangle);

@@ -1,7 +1,38 @@
-#include "nvui/painter.h"
+#include "nvui/private/painter.h"
+
+#include "nvui/private/font.h"
 #include "nvui/util.h"
 
 #include <tgmath.h>
+
+NVAPI void PainterReset(Painter *painter)
+{
+    painter->backColor = COLOR_BLACK;
+    painter->lineWidth = 1;
+    painter->font = NULL;
+    painter->fontStyle = Regular;
+}
+
+NVAPI void PainterSetColor(Painter *painter, Color color)
+{
+    painter->backColor = color;
+}
+
+NVAPI void PainterSetLineWidth(Painter *painter, float width)
+{
+    if(width > 0)
+        painter->lineWidth = width;
+}
+
+NVAPI void PainterSetFont(Painter *painter, Font *font)
+{
+    painter->font = font;
+}
+
+NVAPI void PainterSetFontStyle(Painter *painter, FontStyle style)
+{
+    painter->fontStyle = style;
+}
 
 NVAPI void PainterDrawLine(Painter *painter, int x1, int y1, int x2, int y2)
 {

@@ -18,11 +18,14 @@ static int ButtonMessage(Element *element, Message message, int di, void *dp)
         ElementMessage(element, MSG_BUTTON_GET_COLOR, 0, &c);
         uint32_t c1 = pressed ? 0xffffff : 0x000000, c2 = pressed ? 0x000000 : c;
 
-        painter->backColor = ColorFromInt(c2);
+        //painter->backColor = ColorFromInt(c2);
+        PainterSetColor(painter, ColorFromInt(c2));
         PainterFillRect(painter, element->bounds);
-        painter->backColor = ColorFromInt(c1);
+        //painter->backColor = ColorFromInt(c1);
+        PainterSetColor(painter, ColorFromInt(c1));
         PainterDrawRect(painter, element->bounds);
-        painter->backColor = ColorFromInt(c1);
+        //painter->backColor = ColorFromInt(c1);
+        PainterSetColor(painter, ColorFromInt(c1));
         PainterDrawString(painter, element->bounds, button->text, button->textBytes, true);
     }
     else if(message == MSG_UPDATE)

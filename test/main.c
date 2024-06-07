@@ -23,7 +23,7 @@ int LayoutElementMessage(Element *element, Message message, int di, void *dp) {
 		ElementMove(LabelGetElement(myLabel), (Rectangle){10, ElementGetBounds(element).r - 10, 50, 90}, false);
 	} else if (message == MSG_PAINT) {
 		Painter *painter = dp;
-		painter->backColor = ColorFromInt(0xFFCCFF);
+		PainterSetColor(painter, ColorFromInt(0xFFCCFF));
 		PainterFillRect(painter, ElementGetBounds(element));
 	}
 
@@ -38,6 +38,8 @@ int MyButtonMessage(Element *element, Message message, int di, void *dp) {
 	if (message == MSG_CLICKED) {
 		counter++;
 		UpdateLabel();
+	} else if (message == MSG_BUTTON_GET_COLOR) {
+		*(uint32_t*)dp = 0x32cd32;
 	}
 	
 	return 0;
