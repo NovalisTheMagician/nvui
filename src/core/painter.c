@@ -1,6 +1,5 @@
 #include "nvui/private/painter.h"
 
-#include "cglm/struct/vec2.h"
 #include "nvui/private/font.h"
 #include "nvui/util.h"
 
