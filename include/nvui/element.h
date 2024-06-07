@@ -5,8 +5,8 @@
 
 #include <stdint.h>
 
-struct Window;
 struct Element;
+typedef struct Element Element;
 
 #define UPDATE_HOVERED (1)
 #define UPDATE_PRESSED (2)
@@ -32,22 +32,14 @@ typedef enum Message
     MSG_USER
 } Message;
 
-typedef int (*MessageHandler)(struct Element *element, Message message, int di, void *dp);
+NVAPI extern const size_t ElementSize;
 
-typedef struct Element
-{
-    uint32_t flags;
-    uint32_t childCount;
-    Rectangle bounds, clip;
-    struct Element *parent;
-    struct Element **children;
-    struct Window *window;
-    void *user;
-    MessageHandler messageClass, messageUser;
-} Element;
+typedef int (*MessageHandler)(Element *element, Message message, int di, void *dp);
 
 NVAPI Element* ElementCreate(size_t bytes, Element *parent, uint32_t flags, MessageHandler messageClass);
 NVAPI int ElementMessage(Element *element, Message message, int di, void *dp);
 NVAPI void ElementMove(Element *element, Rectangle bounds, bool alwaysLayout);
 NVAPI void ElementRepaint(Element *element, Rectangle *region);
 NVAPI Element* ElementFindByPoint(Element *element, int x, int y);
+NVAPI void ElementSetUserHandler(Element *element, MessageHandler userClass);
+NVAPI Rectangle ElementGetBounds(Element *element);

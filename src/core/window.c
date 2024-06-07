@@ -1,17 +1,26 @@
 #include "nvui/window.h"
 
 #include <stdlib.h>
-
-#include "nvui/element.h"
-#include "nvui/painter.h"
-
 #include <stdio.h>
+
+#include "nvui/private/window.h"
+#include "nvui/painter.h"
+#include "nvui/resources.h"
 
 #define WINDOW_MIN_WIDTH 200
 #define WINDOW_MIN_HEIGHT 200
 #define BUFFER_SIZE 1024 * 64 //64k vertices as a draw buffer. that should support complex drawing operations
 
-#include "nvui/resources.h"
+typedef struct GlobalState
+{
+    Window **windows;
+    size_t windowCount;
+
+#ifdef __linux__
+    Display *display;
+    Atom windowClosedID;
+#endif
+} GlobalState;
 
 GlobalState global = {};
 static bool glFuncsLoaded = false;
@@ -419,6 +428,11 @@ static void GLDebugCallback(GLenum source, GLenum type, GLuint id, GLenum severi
         v;
 	});
     printf("%s, %s, %s, %u: %s\n", src_str, type_str, severity_str, id, message);
+}
+
+NVAPI Element* WindowGetRootElement(Window *window)
+{
+    return &window->e;
 }
 
 #ifdef _WIN32

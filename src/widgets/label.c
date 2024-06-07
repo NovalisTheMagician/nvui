@@ -1,5 +1,6 @@
 #include "nvui/widgets.h"
 
+#include "nvui/private/widgets.h"
 #include "nvui/painter.h"
 
 static int LabelMessage(Element *element, Message message, int di, void *dp)
@@ -26,4 +27,10 @@ NVAPI Label* LabelCreate(Element *parent, uint32_t flags, const char *text, ssiz
 NVAPI void LabelSetContent(Label *label, const char *text, ssize_t textBytes)
 {
     StringCopy(&label->text, &label->textBytes, text, textBytes);
+    ElementRepaint(&label->e, NULL);
+}
+
+NVAPI Element* LabelGetElement(Label *label)
+{
+    return &label->e;
 }

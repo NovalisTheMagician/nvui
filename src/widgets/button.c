@@ -1,6 +1,7 @@
 #include "nvui/widgets.h"
 
-#include "nvui/window.h"
+#include "nvui/private/window.h"
+#include "nvui/private/widgets.h"
 #include "nvui/painter.h"
 
 static int ButtonMessage(Element *element, Message message, int di, void *dp)
@@ -37,4 +38,9 @@ NVAPI Button* ButtonCreate(Element *parent, uint32_t flags, const char *text, ss
     Button *button = (Button*)ElementCreate(sizeof *button, parent, flags, ButtonMessage);
     StringCopy(&button->text, &button->textBytes, text, textBytes);
     return button;
+}
+
+NVAPI Element* ButtonGetElement(Button *button)
+{
+    return &button->e;
 }

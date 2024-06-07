@@ -1,7 +1,10 @@
 #include "nvui/element.h"
 
 #include <stdlib.h>
-#include "nvui/window.h"
+#include "nvui/private/element.h"
+#include "nvui/private/window.h"
+
+const size_t ElementSize = sizeof(Element);
 
 NVAPI Element* ElementCreate(size_t bytes, Element *parent, uint32_t flags, MessageHandler messageClass)
 {
@@ -83,4 +86,14 @@ NVAPI Element* ElementFindByPoint(Element *element, int x, int y)
         }
     }
     return element;
+}
+
+NVAPI void ElementSetUserHandler(Element *element, MessageHandler userClass)
+{
+    element->messageUser = userClass;
+}
+
+NVAPI Rectangle ElementGetBounds(Element *element)
+{
+    return element->bounds;
 }

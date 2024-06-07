@@ -10,21 +10,21 @@ int counter = 0;
 
 void UpdateLabel(void) {
 	char buffer[50];
-	snprintf(buffer, sizeof(buffer), "Click count: %d", counter);
+	snprintf(buffer, sizeof buffer, "Click count: %d", counter);
 	LabelSetContent(myLabel, buffer, -1);
-	ElementRepaint(&myLabel->e, NULL);
+	//ElementRepaint(&myLabel->e, NULL);
 }
 
 int LayoutElementMessage(Element *element, Message message, int di, void *dp) {
 	(void) di;
 
 	if (message == MSG_LAYOUT) {
-		ElementMove(&myButton->e, (Rectangle){10, 200, 10, 40}, false);
-		ElementMove(&myLabel->e, (Rectangle){10, element->bounds.r - 10, 50, 90}, false);
+		ElementMove(ButtonGetElement(myButton), (Rectangle){10, 200, 10, 40}, false);
+		ElementMove(LabelGetElement(myLabel), (Rectangle){10, ElementGetBounds(element).r - 10, 50, 90}, false);
 	} else if (message == MSG_PAINT) {
 		Painter *painter = dp;
 		painter->backColor = ColorFromInt(0xFFCCFF);
-		PainterFillRect(painter, element->bounds);
+		PainterFillRect(painter, ElementGetBounds(element));
 	}
 
 	return 0;
@@ -46,9 +46,9 @@ int MyButtonMessage(Element *element, Message message, int di, void *dp) {
 int main() {
 	Initialize();
 	Window *window = WindowCreate("Hello, world", 300, 200);
-	Element *layoutElement = ElementCreate(sizeof(Element), &window->e, 0, LayoutElementMessage);
+	Element *layoutElement = ElementCreate(ElementSize, WindowGetRootElement(window), 0, LayoutElementMessage);
 	myButton = ButtonCreate(layoutElement, 0, "Increment counter", -1);
-	myButton->e.messageUser = MyButtonMessage;
+	ElementSetUserHandler((Element*)myButton, MyButtonMessage);
 	myLabel = LabelCreate(layoutElement, LABEL_CENTER, NULL, 0);
 	UpdateLabel();
 	return MessageLoop();
