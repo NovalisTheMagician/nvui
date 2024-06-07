@@ -25,12 +25,12 @@ typedef struct GlobalState
 GlobalState global = {};
 static bool glFuncsLoaded = false;
 
-static bool CompileShader(const char *shaderScr, GLuint *shader)
+static bool CompileShader(const char *shaderScr, GLint len, GLuint *shader)
 {
     int success;
     char infoLog[512];
 
-    glShaderSource(*shader, 1, &shaderScr, NULL);
+    glShaderSource(*shader, 1, &shaderScr, &len);
     glCompileShader(*shader);
     glGetShaderiv(*shader, GL_COMPILE_STATUS, &success);
     if(!success)
@@ -64,53 +64,16 @@ static bool LinkProgram(GLuint vertexShader, GLuint fragmentShader, GLuint *prog
 
 static bool InitGLData(Window *window)
 {
-    const char *vertShaderSrc = 
-        "#version 460 core\n"
-        "layout(location=0) in vec2 inPosition;\n"
-        "layout(location=1) in vec2 inTexCoords;\n"
-        "layout(location=2) in vec4 inColor;\n"
-        "out vec4 outColor;\n"
-        "out vec2 outTexCoords;\n"
-        "uniform mat4 viewProj;\n"
-        "void main() {\n"
-        "   gl_Position = viewProj * vec4(inPosition, 0, 1);\n"
-        "   outColor = inColor;\n"
-        "   outTexCoords = inTexCoords;\n"
-        "}\n";
-
-    const char *fragShaderSrc = 
-        "#version 460 core\n"
-        "in vec4 outColor;\n"
-        "in vec2 outTexCoords;\n"
-        "out vec4 fragColor;\n"
-        "uniform sampler2D tex;\n"
-        "uniform vec4 tint;\n"
-        "void main() {\n"
-        "   fragColor = outColor * texture(tex, outTexCoords) * tint;\n"
-        "}\n";
-
-    const char *fontShaderSrc =
-        "#version 460 core\n"
-        "in vec4 outColor;\n"
-        "in vec2 outTexCoords;\n"
-        "out vec4 fragColor;\n"
-        "uniform sampler2D tex;\n"
-        "uniform vec4 tint;\n"
-        "void main() {\n"
-        "   float v = texture(tex, outTexCoords).r;\n"
-        "   fragColor = outColor * vec4(tint.rgb, tint.a * v);\n"
-        "}\n";
-
     GLuint vertShader = glCreateShader(GL_VERTEX_SHADER);
-    if(!CompileShader(vertShaderSrc, &vertShader))
+    if(!CompileShader(gShaderVertData, gShaderVertSize, &vertShader))
         return false;
 
     GLuint fragShader = glCreateShader(GL_FRAGMENT_SHADER);
-    if(!CompileShader(fragShaderSrc, &fragShader))
+    if(!CompileShader(gShaderFragData, gShaderFragSize, &fragShader))
         return false;
 
     GLuint fontShader = glCreateShader(GL_FRAGMENT_SHADER);
-    if(!CompileShader(fontShaderSrc, &fontShader))
+    if(!CompileShader(gShaderFontData, gShaderFontSize, &fontShader))
         return false;
 
     GLuint program = glCreateProgram();
@@ -125,16 +88,15 @@ static bool InitGLData(Window *window)
     glDeleteShader(fragShader);
     glDeleteShader(fontShader);
 
-    window->glData.fontProgram = fontProgram;
     window->glData.shaderProgram = program;
-    window->glData.projectionLoc = glGetUniformLocation(program, "viewProj");
-    window->glData.tintLoc = glGetUniformLocation(program, "tint");
-    window->glData.textureLoc = glGetUniformLocation(program, "tex");
+    window->glData.fontProgram = fontProgram;
+    window->glData.projectionLoc = 0; // viewProj
+    window->glData.textureLoc = 1; // tex
+    window->glData.tintLoc = 2; // tint
 
-    const uint8_t whiteBytes[] = { 255, 255, 255, 255 };
     glCreateTextures(GL_TEXTURE_2D, 1, &window->glData.whiteTexture);
     glTextureStorage2D(window->glData.whiteTexture, 1, GL_RGBA8, 1, 1);
-    glTextureSubImage2D(window->glData.whiteTexture, 0, 0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, whiteBytes);
+    glTextureSubImage2D(window->glData.whiteTexture, 0, 0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (uint8_t[]){ 255, 255, 255, 255 });
     glTextureParameteri(window->glData.whiteTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTextureParameteri(window->glData.whiteTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
@@ -359,6 +321,8 @@ static void Update(Window *window)
         painter.width = window->width;
         painter.height = window->height;
         painter.clip = RectangleIntersection((Rectangle){ .r = window->width, .b = window->height }, window->updateRegion);
+        painter.lineWidth = 1;
+
         painter.framebuffer = gldata.framebuffer;
         painter.defaultFont = &window->defaultFont;
         painter.fontStyle = Regular;

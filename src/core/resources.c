@@ -14,3 +14,7 @@ INCBIN(FontMonoRegular, "fonts/LiberationMono-Regular.ttf");
 INCBIN(FontMonoItalic, "fonts/LiberationMono-Italic.ttf");
 INCBIN(FontMonoBold, "fonts/LiberationMono-Bold.ttf");
 INCBIN(FontMonoBoldItalic, "fonts/LiberationMono-BoldItalic.ttf");
+
+INCTXT(ShaderVert, "shaders/vert.vs");
+INCTXT(ShaderFrag, "shaders/frag.fs");
+INCTXT(ShaderFont, "shaders/font.fs");

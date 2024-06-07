@@ -16,3 +16,7 @@ INCBIN_EXTERN(FontMonoRegular);
 INCBIN_EXTERN(FontMonoItalic);
 INCBIN_EXTERN(FontMonoBold);
 INCBIN_EXTERN(FontMonoBoldItalic);
+
+INCTXT_EXTERN(ShaderVert);
+INCTXT_EXTERN(ShaderFrag);
+INCTXT_EXTERN(ShaderFont);

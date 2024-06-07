@@ -22,6 +22,7 @@ static int ButtonMessage(Element *element, Message message, int di, void *dp)
         PainterSetColor(painter, ColorFromInt(c2));
         PainterFillRect(painter, element->bounds);
         //painter->backColor = ColorFromInt(c1);
+        PainterSetLineWidth(painter, 1.0f);
         PainterSetColor(painter, ColorFromInt(c1));
         PainterDrawRect(painter, element->bounds);
         //painter->backColor = ColorFromInt(c1);
