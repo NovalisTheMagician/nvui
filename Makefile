@@ -25,7 +25,7 @@ ARFLAGS := rcs
 
 TESTFLAGS := -l$(LIBRARY) -Iinclude -L. -Wl,-rpath,. -std=c2x -g
 
-PLATFORM := UNKOWN
+PLATFORM := UNKNOWN
 
 ifeq ($(OS),Windows_NT)
     PLATFORM := WINDOWS
