@@ -37,15 +37,15 @@ NVAPI void PainterSetFontStyle(Painter *painter, FontStyle style)
 
 NVAPI void PainterDrawLine(Painter *painter, int x1, int y1, int x2, int y2)
 {
-    size_t startVertex = painter->vertIndex;
-    vec2s dir = glms_vec2_normalize(glms_vec2_sub((vec2s){ .x = x2, .y = y2 }, (vec2s){ .x = x1, .y = y1 }));
-    vec2s leftDir = glms_vec2_scale((vec2s){ .x = dir.y, .y = -dir.x }, painter->lineWidth);
-    vec2s rightDir = glms_vec2_scale((vec2s){ .x = -dir.y, .y = dir.x }, painter->lineWidth);
+    const size_t startVertex = painter->vertIndex;
+    const vec2s dir = glms_vec2_normalize(glms_vec2_sub((vec2s){ .x = x2, .y = y2 }, (vec2s){ .x = x1, .y = y1 }));
+    const vec2s leftDir = glms_vec2_scale((vec2s){ .x = dir.y, .y = -dir.x }, painter->lineWidth);
+    const vec2s rightDir = glms_vec2_scale((vec2s){ .x = -dir.y, .y = dir.x }, painter->lineWidth);
 
-    vec2s topLeft = glms_vec2_add((vec2s){ .x = x1, .y = y1 }, rightDir);
-    vec2s topRight = glms_vec2_add((vec2s){ .x = x2, .y = y2 }, rightDir);
-    vec2s bottomLeft = glms_vec2_add((vec2s){ .x = x1, .y = y1 }, leftDir);
-    vec2s bottomRight = glms_vec2_add((vec2s){ .x = x2, .y = y2 }, leftDir);
+    const vec2s topLeft = glms_vec2_add((vec2s){ .x = x1, .y = y1 }, rightDir);
+    const vec2s topRight = glms_vec2_add((vec2s){ .x = x2, .y = y2 }, rightDir);
+    const vec2s bottomLeft = glms_vec2_add((vec2s){ .x = x1, .y = y1 }, leftDir);
+    const vec2s bottomRight = glms_vec2_add((vec2s){ .x = x2, .y = y2 }, leftDir);
 
     const vec4s white = {{ 1, 1, 1, 1 }};
 
@@ -73,16 +73,22 @@ NVAPI void PainterDrawRect(Painter *painter, Rectangle rectangle)
 
 NVAPI void PainterFillRect(Painter *painter, Rectangle rectangle)
 {
-    size_t startVertex = painter->vertIndex;
+    const size_t startVertex = painter->vertIndex;
     rectangle = RectangleIntersection(painter->clip, rectangle);
 
-    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = (float)rectangle.l, .y = (float)rectangle.t }, .color = {{ 1, 1, 1, 1 }} };
-    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = (float)rectangle.r, .y = (float)rectangle.t }, .color = {{ 1, 1, 1, 1 }} };
-    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = (float)rectangle.l, .y = (float)rectangle.b }, .color = {{ 1, 1, 1, 1 }} };
+    const vec2s topLeft = { .x = rectangle.l, .y = rectangle.t };
+    const vec2s topRight = { .x = rectangle.r, .y = rectangle.t };
+    const vec2s bottomLeft = { .x = rectangle.l, .y = rectangle.b };
+    const vec2s bottomRight = { .x = rectangle.r, .y = rectangle.b };
+    const vec4s white = {{ 1, 1, 1, 1 }};
 
-    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = (float)rectangle.r, .y = (float)rectangle.t }, .color = {{ 1, 1, 1, 1 }} };
-    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = (float)rectangle.r, .y = (float)rectangle.b }, .color = {{ 1, 1, 1, 1 }} };
-    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = (float)rectangle.l, .y = (float)rectangle.b }, .color = {{ 1, 1, 1, 1 }} };
+    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = topLeft, .color = white };
+    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = topRight, .color = white };
+    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = bottomLeft, .color = white };
+
+    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = topRight, .color = white };
+    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = bottomRight, .color = white };
+    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = bottomLeft, .color = white };
 
     glUniform4fv(painter->tintLoc, 1, (float*)&painter->backColor);
     glDrawArrays(GL_TRIANGLES, startVertex, 6);
