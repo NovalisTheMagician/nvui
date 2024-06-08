@@ -1,8 +1,6 @@
 #include <nvui/window.h>
 #include <nvui/painter.h>
 #include <nvui/widgets.h>
-#include <stdio.h>
-#include <string.h>
 
 int FixedReportedSizeElement(Element *element, Message message, int di, void *dp) {
 	(void) di;

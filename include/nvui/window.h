@@ -1,6 +1,5 @@
 #pragma once
 
-#include <stdlib.h>
 #include "nvui.h"
 #include "element.h"
 #include "font.h"
