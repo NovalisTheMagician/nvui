@@ -30,6 +30,9 @@ typedef enum Message
     MSG_MOUSE_DRAG,
     MSG_CLICKED,
 
+    MSG_GET_WIDTH,
+    MSG_GET_HEIGHT,
+
     MSG_BUTTON_GET_COLOR,
 
     MSG_USER
@@ -44,6 +47,10 @@ NVAPI int ElementMessage(Element *element, Message message, int di, void *dp);
 NVAPI void ElementMove(Element *element, Rectangle bounds, bool alwaysLayout);
 NVAPI void ElementRepaint(Element *element, Rectangle *region);
 NVAPI Element* ElementFindByPoint(Element *element, int x, int y);
+
 NVAPI void ElementSetUserHandler(Element *element, MessageHandler userClass);
+NVAPI void ElementSetContext(Element *element, void *context);
+
 NVAPI Rectangle ElementGetBounds(Element *element);
 NVAPI Window* ElementGetWindow(Element *element);
+NVAPI void* ElementGetContext(Element *element);

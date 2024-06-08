@@ -28,3 +28,11 @@ NVAPI void FontFree(Font *font);
 NVAPI RectangleF FontGetQuad(Font *font, FontStyle style, uint32_t codepoint, float *x, float *y, float *u0, float *v0, float *u1, float *v1);
 NVAPI RectangleF FontMeasureString(Font *font, FontStyle style, const char *string, size_t bytes);
 NVAPI float FontKernAdvance(Font *font, FontStyle style, uint32_t current, uint32_t next);
+
+NVAPI float FontGetBaseline(Font *font, FontStyle style);
+NVAPI float FontGetAscender(Font *font, FontStyle style);
+NVAPI float FontGetDescender(Font *font, FontStyle style);
+NVAPI float FontGetLinegap(Font *font, FontStyle style);
+
+NVAPI float FontGetHeight(Font *font, FontStyle style);
+NVAPI float FontGetLineOffset(Font *font, FontStyle style);

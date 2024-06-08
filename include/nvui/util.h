@@ -26,4 +26,4 @@ NVAPI void StringCopy(char **dest, size_t *destBytes, const char *source, ssize_
 
 #define Min(a, b) ({ __typeof__(a) a_ = a; __typeof__(b) b_ = b; a_ < b_ ? a_ : b_; })
 #define Max(a, b) ({ __typeof__(a) a_ = a; __typeof__(b) b_ = b; a_ > b_ ? a_ : b_; })
-#define Clamp(x, mi, ma) ({ __typeof__(x) x_ = x; __typeof__(mi) mi_ = mi; __typeof__(ma) ma_ = ma; Min(mi_, Max(x_, ma_)); })
+#define Clamp(x, mi, ma) ({ __typeof__(x) x_ = x; __typeof__(mi) mi_ = mi; __typeof__(ma) ma_ = ma; Max(mi_, Min(x_, ma_)); })

@@ -45,6 +45,14 @@ NVAPI bool FontLoadMem(const uint8_t *data, size_t len, Font *font, FontStyle st
 
     stbtt_InitFont(&font->styles[style].fontinfo, font->styles[style].ttf, 0);
 
+    int ascend, descent, linegap;
+    stbtt_GetFontVMetrics(&font->styles[style].fontinfo, &ascend, &descent, &linegap);
+    float scale = stbtt_ScaleForMappingEmToPixels(&font->styles[style].fontinfo, font->size);
+    font->styles[style].baseline = ascend*scale;
+    font->styles[style].ascender = ascend*scale;
+    font->styles[style].descender = descent*scale;
+    font->styles[style].linegap = linegap*scale;
+
     stbtt_pack_context ttctx = {};
     stbtt_PackBegin(&ttctx, font->styles[style].bitmap, font->width, font->height, 0, 1, NULL);
     stbtt_PackSetOversampling(&ttctx, 8, 8);
@@ -118,4 +126,34 @@ NVAPI float FontKernAdvance(Font *font, FontStyle style, uint32_t current, uint3
     FontStyleData *data = &font->styles[style];
     float scale = stbtt_ScaleForMappingEmToPixels(&data->fontinfo, font->size);
     return scale * stbtt_GetCodepointKernAdvance(&data->fontinfo, current, next);
+}
+
+NVAPI float FontGetBaseline(Font *font, FontStyle style)
+{
+    return font->styles[style].baseline;
+}
+
+NVAPI float FontGetHeight(Font *font, FontStyle style)
+{
+    return font->styles[style].ascender - font->styles[style].descender;
+}
+
+NVAPI float FontGetAscender(Font *font, FontStyle style)
+{
+    return font->styles[style].ascender;
+}
+
+NVAPI float FontGetDescender(Font *font, FontStyle style)
+{
+    return font->styles[style].descender;
+}
+
+NVAPI float FontGetLinegap(Font *font, FontStyle style)
+{
+    return font->styles[style].linegap;
+}
+
+NVAPI float FontGetLineOffset(Font *font, FontStyle style)
+{
+    return font->styles[style].ascender - font->styles[style].descender + font->styles[style].linegap;
 }

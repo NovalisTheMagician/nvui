@@ -44,7 +44,7 @@ typedef struct Window
     GLData glData;
     mat4s projection;
     bool buffersNeedResize;
-    Font defaultFont;
+    Font fontSans, fontSerif, fontMono;
 
 #ifdef _WIN32
     HWND hwnd;

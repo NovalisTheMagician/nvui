@@ -62,7 +62,7 @@ NVAPI void PainterDrawLine(Painter *painter, int x1, int y1, int x2, int y2)
 
 NVAPI void PainterDrawRect(Painter *painter, Rectangle rectangle)
 {
-    rectangle = RectangleIntersection(painter->clip, rectangle);
+    //rectangle = RectangleIntersection(painter->clip, rectangle);
 
     PainterDrawLine(painter, rectangle.l, rectangle.t, rectangle.r, rectangle.t);
     PainterDrawLine(painter, rectangle.r, rectangle.t, rectangle.r, rectangle.b);
@@ -73,7 +73,7 @@ NVAPI void PainterDrawRect(Painter *painter, Rectangle rectangle)
 NVAPI void PainterFillRect(Painter *painter, Rectangle rectangle)
 {
     const size_t startVertex = painter->vertIndex;
-    rectangle = RectangleIntersection(painter->clip, rectangle);
+    //rectangle = RectangleIntersection(painter->clip, rectangle);
 
     const vec2s topLeft = { .x = rectangle.l, .y = rectangle.t };
     const vec2s topRight = { .x = rectangle.r, .y = rectangle.t };
@@ -112,6 +112,10 @@ NVAPI void PainterDrawString(Painter *painter, Rectangle bounds, const char *str
     {
         x += round((bounds.r - bounds.l - rect.r - rect.l) / 2);
         y += round((bounds.b - bounds.t - rect.b - rect.t) / 2);
+    }
+    else
+    {
+        y += FontGetBaseline(font, style);
     }
 
     for(size_t i = 0; i < bytes; ++i)

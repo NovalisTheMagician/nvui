@@ -9,6 +9,8 @@ typedef struct FontStyleData
     GLuint texture;
     stbtt_packedchar *packedchars;
     stbtt_fontinfo fontinfo;
+
+    float baseline, ascender, descender, linegap;
 } FontStyleData;
 
 typedef struct Font

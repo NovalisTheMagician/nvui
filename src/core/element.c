@@ -93,6 +93,11 @@ NVAPI void ElementSetUserHandler(Element *element, MessageHandler userClass)
     element->messageUser = userClass;
 }
 
+NVAPI void ElementSetContext(Element *element, void *context)
+{
+    element->user = context;
+}
+
 NVAPI Rectangle ElementGetBounds(Element *element)
 {
     return element->bounds;
@@ -101,4 +106,9 @@ NVAPI Rectangle ElementGetBounds(Element *element)
 NVAPI Window* ElementGetWindow(Element *element)
 {
     return element->window;
+}
+
+NVAPI void* ElementGetContext(Element *element)
+{
+    return element->user;
 }

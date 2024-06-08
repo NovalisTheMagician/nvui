@@ -23,3 +23,5 @@ NVAPI Color ColorFromGrayscaleAlpha(float scale, float alpha);
 #define COLOR_RED (Color){ 1, 0, 0, 1 }
 #define COLOR_GREEN (Color){ 0, 1, 0, 1 }
 #define COLOR_BLUE (Color){ 0, 0, 1, 1 }
+
+#define COLOR_CONTROL (Color){ 0.831f, 0.815f, 0.784f, 1 }

@@ -17,3 +17,10 @@ typedef struct Label
     char *text;
     size_t textBytes;
 } Label;
+
+typedef struct FlowPanel
+{
+    Element e;
+    Rectangle border;
+    int gap;
+} FlowPanel;
