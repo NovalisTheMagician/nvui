@@ -99,6 +99,8 @@ NVAPI void PainterDrawString(Painter *painter, Rectangle bounds, const char *str
     Font *font = painter->font ? painter->font : painter->defaultFont;
     FontStyle style = painter->fontStyle;
 
+    const vec4s white = {{ 1, 1, 1, 1 }};
+
     if(!font->hasStyles[style])
     {
         style = Regular;
@@ -124,14 +126,22 @@ NVAPI void PainterDrawString(Painter *painter, Rectangle bounds, const char *str
 
         float u0, v0, u1, v1;
         RectangleF posRect = FontGetQuad(font, style, ch, &x, &y, &u0, &v0, &u1, &v1);
+        const vec2s topLeft = { .x = posRect.l, .y = posRect.t };
+        const vec2s topRight = { .x = posRect.r, .y = posRect.t };
+        const vec2s bottomLeft = { .x = posRect.l, .y = posRect.b };
+        const vec2s bottomRight = { .x = posRect.r, .y = posRect.b };
+        const vec2s uvTopLeft = { .x = u0, .y = v0 };
+        const vec2s uvTopRight = { .x = u1, .y = v0 };
+        const vec2s uvBottomLeft = { .x = u0, .y = v1 };
+        const vec2s uvBottomRight = { .x = u1, .y = v1 };
 
-        painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = posRect.l, .y = posRect.t }, .color = {{ 1, 1, 1, 1 }}, .texcoord = { .x = u0, .y = v0 } };
-        painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = posRect.r, .y = posRect.t }, .color = {{ 1, 1, 1, 1 }}, .texcoord = { .x = u1, .y = v0 } };
-        painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = posRect.l, .y = posRect.b }, .color = {{ 1, 1, 1, 1 }}, .texcoord = { .x = u0, .y = v1 } };
+        painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = topLeft, .color = white, .texcoord = uvTopLeft };
+        painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = topRight, .color = white, .texcoord = uvTopRight };
+        painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = bottomLeft, .color = white, .texcoord = uvBottomLeft };
 
-        painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = posRect.r, .y = posRect.t }, .color = {{ 1, 1, 1, 1 }}, .texcoord = { .x = u1, .y = v0 } };
-        painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = posRect.r, .y = posRect.b }, .color = {{ 1, 1, 1, 1 }}, .texcoord = { .x = u1, .y = v1 } };
-        painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = { .x = posRect.l, .y = posRect.b }, .color = {{ 1, 1, 1, 1 }}, .texcoord = { .x = u0, .y = v1 } };
+        painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = topRight, .color = white, .texcoord = uvTopRight };
+        painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = bottomRight, .color = white, .texcoord = uvBottomRight };
+        painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = bottomLeft, .color = white, .texcoord = uvBottomLeft };
 
         if(i < bytes - 1)
             x += FontKernAdvance(font, painter->fontStyle, ch, string[i+1]);
