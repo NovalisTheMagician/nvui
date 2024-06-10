@@ -1,5 +1,6 @@
 #include "nvui/widgets.h"
 
+#include <stdlib.h>
 #include <tgmath.h>
 
 #include "nvui/private/widgets.h"
@@ -16,6 +17,10 @@ static int LabelMessage(Element *element, Message message, int di, void *dp)
         Painter *painter = dp;
         PainterSetColor(painter, COLOR_BLACK);
         PainterDrawString(painter, element->bounds, label->text, label->textBytes, element->flags & LABEL_CENTER);
+    }
+    else if(message == MSG_DESTROY)
+    {
+        free(label->text);
     }
     else if(message == MSG_GET_WIDTH)
     {

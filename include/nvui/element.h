@@ -14,11 +14,15 @@ typedef struct Element Element;
 #define UPDATE_HOVERED (1)
 #define UPDATE_PRESSED (2)
 
+#define ELEMENT_DESTROY (1 << 30)
+#define ELEMENT_DESTROY_DESCENDENT (1 << 31)
+
 typedef enum Message
 {
     MSG_LAYOUT,
     MSG_PAINT,
     MSG_UPDATE,
+    MSG_DESTROY,
 
     MSG_LEFT_DOWN,
     MSG_LEFT_UP,
@@ -43,6 +47,8 @@ NVAPI extern const size_t ElementSize;
 typedef int (*MessageHandler)(Element *element, Message message, int di, void *dp);
 
 NVAPI Element* ElementCreate(size_t bytes, Element *parent, uint32_t flags, MessageHandler messageClass);
+NVAPI void ElementDestroy(Element *element);
+
 NVAPI int ElementMessage(Element *element, Message message, int di, void *dp);
 NVAPI void ElementMove(Element *element, Rectangle bounds, bool alwaysLayout);
 NVAPI void ElementRepaint(Element *element, Rectangle *region);

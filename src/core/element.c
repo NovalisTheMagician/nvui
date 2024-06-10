@@ -24,9 +24,36 @@ NVAPI Element* ElementCreate(size_t bytes, Element *parent, uint32_t flags, Mess
     return element;
 }
 
+NVAPI void ElementDestroy(Element *element)
+{
+    if(element->flags & ELEMENT_DESTROY)
+    {
+        return;
+    }
+
+    element->flags |= ELEMENT_DESTROY;
+
+    Element *ancestor = element->parent;
+    while(ancestor)
+    {
+        ancestor->flags |= ELEMENT_DESTROY_DESCENDENT;
+        ancestor = ancestor->parent;
+    }
+
+    for(size_t i = 0; i < element->childCount; ++i)
+    {
+        ElementDestroy(element->children[i]);
+    }
+}
+
 NVAPI int ElementMessage(Element *element, Message message, int di, void *dp)
 {
-    if (element->messageUser)
+    if(message != MSG_DESTROY && (element->flags & ELEMENT_DESTROY))
+    {
+        return 0;
+    }
+
+    if(element->messageUser)
     {
         int result = element->messageUser(element, message, di, dp);
         if(result) return result;

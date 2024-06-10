@@ -101,7 +101,6 @@ int main() {
 	ButtonCreate((Element*)row2, 0, "Button 6 in row", -1);
 
 	Window *window2 = WindowCreate("Window 2", 500, 500);
-
 	FlowPanel *column5 = FlowPanelCreate(WindowGetRootElement(window2), PANEL_GRAY);
 	FlowPanelSetGap(column5, 10);
 	FlowPanelSetBorder(column5, (Rectangle){ 10, 10, 10, 10 });

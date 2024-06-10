@@ -1,5 +1,6 @@
 #include "nvui/widgets.h"
 
+#include <stdlib.h>
 #include <tgmath.h>
 
 #include "nvui/window.h"
@@ -32,6 +33,10 @@ static int ButtonMessage(Element *element, Message message, int di, void *dp)
         //painter->backColor = ColorFromInt(c1);
         PainterSetColor(painter, c1);
         PainterDrawString(painter, element->bounds, button->text, button->textBytes, true);
+    }
+    else if(message == MSG_DESTROY)
+    {
+        free(button->text);
     }
     else if(message == MSG_UPDATE)
     {

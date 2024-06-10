@@ -15,6 +15,7 @@ typedef struct GlobalState
 {
     Window **windows;
     size_t windowCount;
+    Window *mainWindow;
 
 #ifdef __linux__
     Display *display;
@@ -327,9 +328,67 @@ static void ElementPaint(Element *element, Painter *painter)
     }
 }
 
+static bool ElementDestroyNow(Element *element)
+{
+    if(element->flags & ELEMENT_DESTROY_DESCENDENT)
+    {
+        element->flags &= ~ELEMENT_DESTROY_DESCENDENT;
+
+        for(size_t i = 0; i < element->childCount; ++i)
+        {
+            if(ElementDestroyNow(element->children[i]))
+            {
+                memmove(&element->children[i], &element->children[i + 1], sizeof(Element*) * (element->childCount - i - 1));
+                element->childCount--;
+                i--;
+            }
+        }
+    }
+
+    if(element->flags & ELEMENT_DESTROY)
+    {
+        ElementMessage(element, MSG_DESTROY, 0, NULL);
+
+        if(element->window->pressed == element)
+        {
+            WindowSetPressed(element->window, NULL, 0);
+        }
+
+        if(element->window->hovered == element)
+        {
+            element->window->hovered = &element->window->e;
+        }
+
+        free(element->children);
+        free(element);
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+static void RemoveWindow(Window *window)
+{
+    for(size_t i = 0; i < global.windowCount; ++i)
+    {
+        if(global.windows[i] == window)
+        {
+            global.windows[i] = global.windows[global.windowCount - 1];
+            global.windowCount--;
+            return;
+        }
+    }
+}
+
 static void Update(Window *window)
 {
-    if(RectangleValid(window->updateRegion))
+    if(ElementDestroyNow(window->e.children[0]))
+    {
+        RemoveWindow(window);
+    }
+    else if(RectangleValid(window->updateRegion))
     {
         const GLData gldata = window->glData;
 
@@ -356,16 +415,6 @@ static void Update(Window *window)
         WindowEndPaint(window, &painter);
         window->updateRegion = (Rectangle){ 0 };
     }
-}
-
-static void RemoveAllElements(Element *element)
-{
-    for(size_t i = 0; i < element->childCount; ++i)
-        RemoveAllElements(element->children[i]);
-
-    if(element->childCount)
-        free(element->children);
-    free(element);
 }
 
 static void GLDebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *user)
@@ -424,6 +473,12 @@ NVAPI Font* WindowGetFontVariant(Window *window, FontVariant variant)
     case Mono: return &window->fontMono;
     }
     return NULL;
+}
+
+NVAPI void SetMainWindow(Window *window)
+{
+    if(window)
+        global.mainWindow = window;
 }
 
 #ifdef _WIN32
@@ -525,7 +580,33 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
         break;
     case WM_DESTROY:
         {
-            PostQuitMessage(0);
+            bool exit = global.windowCount == 1;
+            if(global.mainWindow == window)
+            {
+                exit = true;
+                for(size_t i = 0; i < global.windowCount; ++i)
+                {
+                    ShowWindow(global.windows[i]->hwnd, SW_HIDE);
+                }
+
+                for(size_t i = 0; i < global.windowCount; ++i)
+                {
+                    if(global.windows[i] == window) continue;
+                    DestroyWindow(global.windows[i]->hwnd);
+                    i--;
+                }
+            }
+
+            ElementDestroy(&window->e);
+            
+            wglMakeCurrent(window->hdc, window->hglrc);
+            Update(window);
+
+            DestroyGLData(window);
+            wglDeleteContext(window->hglrc);
+
+            if(exit)
+                PostQuitMessage(0);
         }
         break;
     case WM_SIZE:
@@ -654,22 +735,6 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
     return 0;
 }
 
-static void _DestroyWindow(Window *window)
-{
-    wglMakeCurrent(window->hdc, window->hglrc);
-    if(window->e.childCount)
-    {
-        RemoveAllElements(window->e.children[0]);
-        free(window->e.children);
-    }
-
-    DestroyGLData(window);
-
-    wglMakeCurrent(NULL, NULL);
-    wglDeleteContext(window->hglrc);
-    DestroyWindow(window->hwnd);
-}
-
 NVAPI void Initialize(void)
 {
     LoadPreGLFunctions();
@@ -698,6 +763,8 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
     global.windowCount++;
     global.windows = realloc(global.windows, sizeof(Window*) * global.windowCount);
     global.windows[global.windowCount - 1] = window;
+    if(!global.mainWindow)
+        global.mainWindow = window;
 
     RECT windowRect = { .right = width, .bottom = height };
     AdjustWindowRectEx(&windowRect, WS_OVERLAPPEDWINDOW, false, WS_EX_OVERLAPPEDWINDOW);
@@ -776,11 +843,6 @@ NVAPI int MessageLoop(void)
         DispatchMessageA(&message);
     }
 
-    for(size_t i = 0; i < global.windowCount; ++i)
-    {
-        _DestroyWindow(global.windows[i]);
-        free(global.windows[i]);
-    }
     free(global.windows);
 
     return message.wParam;
@@ -830,23 +892,6 @@ static bool LoadGLFunctions(void)
     return true;
 }
 
-static void DestroyWindow(Window *window)
-{
-    if(window->e.childCount)
-    {
-        RemoveAllElements(window->e.children[0]);
-        free(window->e.children);
-    }
-
-    DestroyGLData(window);
-
-    glXMakeCurrent(global.display, 0, NULL);
-    glXDestroyContext(global.display, window->context);
-    XFree(window->visual);
-    XFreeColormap(global.display, window->colormap);
-    XDestroyWindow(global.display, window->window);
-}
-
 NVAPI void Initialize(void)
 {
     global.display = XOpenDisplay(NULL);
@@ -867,6 +912,8 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
     global.windowCount++;
     global.windows = realloc(global.windows, sizeof(Window*) * global.windowCount);
     global.windows[global.windowCount - 1] = window;
+    if(!global.mainWindow)
+        global.mainWindow = window;
 
     int screenId = DefaultScreen(global.display);
 
@@ -948,6 +995,43 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
     window->firstTimeLayout = true;
 
     return window;
+}
+
+#if 0
+static void CloseWindow(Window *window)
+{
+    long mask = SubstructureRedirectMask | SubstructureNotifyMask;
+
+    event.xclient.type = ClientMessage;
+    event.xclient.serial = 0;
+    event.xclient.send_event = True;
+    event.xclient.message_type = global.windowClosedID;
+    event.xclient.window = window->window;
+    event.xclient.format = 32;
+    event.xclient.data.l[0] = 0;
+    event.xclient.data.l[1] = 0;
+    event.xclient.data.l[2] = 0;
+    event.xclient.data.l[3] = 0;
+    event.xclient.data.l[4] = 0;
+
+    XSendEvent(global.display, DefaultRootWindow(global.display), False, mask, &event);
+    XSync(global.display, False);
+}
+#endif
+
+static void CloseWindow(Window *window)
+{
+    ElementDestroy(&window->e);
+                    
+    glXMakeCurrent(global.display, window->window, window->context);
+    Update(window);
+
+    DestroyGLData(window);
+    glXDestroyContext(global.display, window->context);
+    
+    XFree(window->visual);
+    XFreeColormap(global.display, window->colormap);
+    XDestroyWindow(global.display, window->window);
 }
 
 NVAPI int MessageLoop(void)
@@ -1050,23 +1134,34 @@ NVAPI int MessageLoop(void)
                 if(!window) continue;
                 if(event.xclient.data.l[0] == global.windowClosedID)
                 {
-                    isRunning = false;
+                    bool exit = global.windowCount == 1;
+                    if(global.mainWindow == window)
+                    {
+                        for(size_t i = 0; i < global.windowCount; ++i)
+                        {
+                            if(global.windows[i] == window) continue;
+                            CloseWindow(global.windows[i]);
+                            i--;
+                        }
+                    }
+
+                    CloseWindow(window);
+                    
+                    if(exit)
+                        isRunning = false;
                 }
             }
             break;
+#if 0
         case DestroyNotify:
             {
                 isRunning = false;
             }
             break;
+#endif
         }
     }
 
-    for(size_t i = 0; i < global.windowCount; ++i)
-    {
-        DestroyWindow(global.windows[i]);
-        free(global.windows[i]);
-    }
     free(global.windows);
 
     XCloseDisplay(global.display);

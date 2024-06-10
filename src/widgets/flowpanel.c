@@ -20,6 +20,8 @@ static int FlowPanelLayout(FlowPanel *panel, Rectangle bounds, bool measure)
 
     for(size_t i = 0; i < panel->e.childCount; ++i)
     {
+        if(panel->e.children[i]->flags & ELEMENT_DESTROY) continue;
+
         count++;
         if(horizontal)
         {
@@ -57,6 +59,8 @@ static int FlowPanelLayout(FlowPanel *panel, Rectangle bounds, bool measure)
 
     for(size_t i = 0; i < panel->e.childCount; ++i)
     {
+        if(panel->e.children[i]->flags & ELEMENT_DESTROY) continue;
+
         Element *child = panel->e.children[i];
 
         if(horizontal)
@@ -97,6 +101,8 @@ static int FlowPanelMeasure(FlowPanel *panel)
     int size = 0;
     for(size_t i = 0; i < panel->e.childCount; ++i)
     {
+        if(panel->e.children[i]->flags & ELEMENT_DESTROY) continue;
+
         int childSize = ElementMessage(panel->e.children[i], horizontal ? MSG_GET_HEIGHT : MSG_GET_WIDTH, 0, NULL);
 
         if(childSize > size)
