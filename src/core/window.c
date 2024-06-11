@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "nvui/private/window.h"
 #include "nvui/private/painter.h"
@@ -1137,6 +1138,7 @@ NVAPI int MessageLoop(void)
                     bool exit = global.windowCount == 1;
                     if(global.mainWindow == window)
                     {
+                        exit = true;
                         for(size_t i = 0; i < global.windowCount; ++i)
                         {
                             if(global.windows[i] == window) continue;
