@@ -7,7 +7,7 @@
 
 static int FlowPanelLayout(FlowPanel *panel, Rectangle bounds, bool measure)
 {
-    bool horizontal = panel->e.flags & PANEL_HORIZONTAL;
+    bool horizontal = panel->e.flags & FLOWPANEL_HORIZONTAL;
 
     int position = horizontal ? panel->border.l : panel->border.t;
     int border2 = horizontal ? panel->border.t : panel->border.l;
@@ -98,7 +98,7 @@ static int FlowPanelLayout(FlowPanel *panel, Rectangle bounds, bool measure)
 
 static int FlowPanelMeasure(FlowPanel *panel)
 {
-    bool horizontal = panel->e.flags & PANEL_HORIZONTAL;
+    bool horizontal = panel->e.flags & FLOWPANEL_HORIZONTAL;
 
     int size = 0;
     for(size_t i = 0; i < panel->e.childCount; ++i)
@@ -117,7 +117,7 @@ static int FlowPanelMeasure(FlowPanel *panel)
 static int FlowPanelMessage(Element *element, Message message, int di, void *dp)
 {
     FlowPanel *panel = (FlowPanel*)element;
-    bool horizontal = element->flags & PANEL_HORIZONTAL;
+    bool horizontal = element->flags & FLOWPANEL_HORIZONTAL;
 
     if(message == MSG_PAINT)
     {

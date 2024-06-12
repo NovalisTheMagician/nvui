@@ -4,6 +4,8 @@
 #include "element.h"
 #include "font.h"
 
+#define WINDOW_NO_RESIZE (1 << 0)
+
 typedef enum FontVariant
 {
     Sans,

@@ -19,7 +19,7 @@ NVAPI Label* LabelCreate(Element *parent, uint32_t flags, const char *text, ssiz
 NVAPI void LabelSetContent(Label *label, const char *text, ssize_t textBytes);
 NVAPI Element* LabelGetElement(Label *label);
 
-#define PANEL_HORIZONTAL (1 << 0)
+#define FLOWPANEL_HORIZONTAL (1 << 0)
 #define PANEL_BORDER (1 << 1)
 #define PANEL_BORDER_3D (1 << 2)
 typedef struct FlowPanel FlowPanel;
@@ -34,7 +34,7 @@ typedef enum CheckboxState
 {
     Unchecked,
     Checked,
-    Undetermined
+    Indeterminate 
 } CheckboxState;
 typedef struct Checkbox Checkbox;
 

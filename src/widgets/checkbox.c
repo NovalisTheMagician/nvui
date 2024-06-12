@@ -54,9 +54,9 @@ static int CheckboxMessage(Element *element, Message message, int di, void *dp)
         checkBounds.r -= 4;
         checkBounds.b -= 4;
         //PainterSetLineWidth(painter, 0.5f);
-        if(state == Checked || (state == Undetermined && !(element->flags & CHECKBOX_TRISTATE)))
+        if(state == Checked || (state == Indeterminate && !(element->flags & CHECKBOX_TRISTATE)))
             DrawCheckmark(painter, checkBounds, element->flags & CHECKBOX_CHECK_CROSS);
-        else if(state == Undetermined)
+        else if(state == Indeterminate)
             PainterFillRect(painter, checkBounds);
         //PainterSetLineWidth(painter, 1.0f);
 
@@ -109,6 +109,7 @@ static int CheckboxMessage(Element *element, Message message, int di, void *dp)
     else if(message == MSG_CLICKED)
     {
         checkbox->state = !checkbox->state;
+        ElementMessage(element, MSG_CHECKBOX_STATE_CHANGE, checkbox->state, NULL);
         ElementRepaint(element, NULL);
     }
 
