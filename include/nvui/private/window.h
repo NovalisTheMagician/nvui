@@ -3,6 +3,7 @@
 #include "font.h"
 #include "element.h"
 #include "../gltypes.h"
+#include "../window.h"
 
 #ifdef _WIN32
 #define Rectangle W32Rectangle
@@ -44,7 +45,7 @@ typedef struct Window
     GLData glData;
     mat4s projection;
     bool buffersNeedResize;
-    Font fontSans, fontSerif, fontMono;
+    Font fonts[NumVariants];
 
 #ifdef _WIN32
     HWND hwnd;

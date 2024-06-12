@@ -15,10 +15,10 @@ typedef enum FontStyle
     Bold,
     BoldItalic,
 
-    NumStyles
+    NumStyles,
+    DefaultStyle = Regular
 } FontStyle;
 
-struct Font;
 typedef struct Font Font;
 
 NVAPI void FontInit(Font *font, int fontSize);

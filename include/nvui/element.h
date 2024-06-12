@@ -5,10 +5,8 @@
 
 #include <stdint.h>
 
-struct Window;
 typedef struct Window Window;
 
-struct Element;
 typedef struct Element Element;
 
 #define UPDATE_HOVERED (1)
@@ -38,6 +36,17 @@ typedef enum Message
     MSG_GET_HEIGHT,
 
     MSG_BUTTON_GET_COLOR,
+    MSG_BUTTON_GET_TEXT_COLOR,
+
+    MSG_LABEL_GET_COLOR,
+
+    MSG_PANEL_GET_COLOR,
+    MSG_PANEL_GET_BORDER_COLOR,
+
+    MSG_CHECKBOX_GET_COLOR,
+    MSG_CHECKBOX_GET_TEXT_COLOR,
+    MSG_CHECKBOX_GET_CHECK_COLOR,
+    MSG_CHECKBOX_STATE_CHANGE,
 
     MSG_USER
 } Message;

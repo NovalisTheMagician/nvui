@@ -15,7 +15,9 @@ static int LabelMessage(Element *element, Message message, int di, void *dp)
     if(message == MSG_PAINT)
     {
         Painter *painter = dp;
-        PainterSetColor(painter, COLOR_BLACK);
+        Color c = COLOR_BLACK;
+        ElementMessage(element, MSG_LABEL_GET_COLOR, 0, &c);
+        PainterSetColor(painter, c);
         PainterDrawString(painter, element->bounds, label->text, label->textBytes, element->flags & LABEL_CENTER);
     }
     else if(message == MSG_DESTROY)
@@ -24,14 +26,14 @@ static int LabelMessage(Element *element, Message message, int di, void *dp)
     }
     else if(message == MSG_GET_WIDTH)
     {
-        Font *font = WindowGetFontVariant(element->window, Serif);
-        RectangleF textRect = FontMeasureString(font, Regular, label->text, label->textBytes);
+        Font *font = WindowGetFontVariant(element->window, DefaultVariant);
+        RectangleF textRect = FontMeasureString(font, DefaultStyle, label->text, label->textBytes);
         return round(textRect.r - textRect.l);
     }
     else if(message == MSG_GET_HEIGHT)
     {
-        Font *font = WindowGetFontVariant(element->window, Serif);
-        return round(FontGetHeight(font, Regular));
+        Font *font = WindowGetFontVariant(element->window, DefaultVariant);
+        return round(FontGetHeight(font, DefaultStyle));
     }
 
     return 0;

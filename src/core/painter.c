@@ -34,7 +34,27 @@ NVAPI void PainterSetFontStyle(Painter *painter, FontStyle style)
     painter->fontStyle = style;
 }
 
-NVAPI void PainterDrawLine(Painter *painter, int x1, int y1, int x2, int y2)
+NVAPI Font* PainterGetFont(Painter *painter)
+{
+    return painter->font ? painter->font : painter->defaultFont;
+}
+
+NVAPI FontStyle PainterGetFontStyle(Painter *painter)
+{
+    return painter->fontStyle;
+}
+
+NVAPI void PainterSetClip(Painter *painter, Rectangle newClip)
+{
+    glScissor(newClip.l, newClip.t, newClip.r, newClip.b);
+}
+
+NVAPI void PainterRestoreClip(Painter *painter)
+{
+    glScissor(painter->clip.l, painter->clip.t, painter->clip.r, painter->clip.b);
+}
+
+NVAPI void PainterDrawLine(Painter *painter, float x1, float y1, float x2, float y2)
 {
     const size_t startVertex = painter->vertIndex;
     const vec2s dir = glms_vec2_normalize(glms_vec2_sub((vec2s){ .x = x2, .y = y2 }, (vec2s){ .x = x1, .y = y1 }));

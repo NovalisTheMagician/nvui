@@ -53,3 +53,11 @@ NVAPI Color ColorFromGrayscaleAlpha(float scale, float alpha)
     alpha = Clamp(alpha, 0.0f, 1.0f);
     return (Color){ .r = scale, .g = scale, .b = scale, .a = alpha };
 }
+
+NVAPI Color ColorMultiply(Color color, float v)
+{
+    float r = Clamp(color.r * v, 0.0f, 1.0f);
+    float g = Clamp(color.g * v, 0.0f, 1.0f);
+    float b = Clamp(color.b * v, 0.0f, 1.0f);
+    return (Color){ .r = r, .g = g, .b = b, .a = color.a };
+}

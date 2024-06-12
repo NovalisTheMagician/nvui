@@ -18,6 +18,8 @@ NVAPI Color ColorFromHSV(float h, float s, float v);
 NVAPI Color ColorFromGrayscale(float scale);
 NVAPI Color ColorFromGrayscaleAlpha(float scale, float alpha);
 
+NVAPI Color ColorMultiply(Color color, float v);
+
 #define COLOR_BLACK (Color){ 0, 0, 0, 1 }
 #define COLOR_WHITE (Color){ 1, 1, 1, 1 }
 #define COLOR_RED (Color){ 1, 0, 0, 1 }

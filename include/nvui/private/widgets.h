@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 
+#include "../widgets.h"
 #include "element.h"
 
 typedef struct Button
@@ -24,3 +25,11 @@ typedef struct FlowPanel
     Rectangle border;
     int gap;
 } FlowPanel;
+
+typedef struct Checkbox
+{
+    Element e;
+    char *text;
+    size_t textBytes;
+    CheckboxState state;
+} Checkbox;

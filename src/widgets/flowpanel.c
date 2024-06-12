@@ -3,6 +3,8 @@
 #include "nvui/private/widgets.h"
 #include "nvui/painter.h"
 
+#include "nvui/color.h"
+
 static int FlowPanelLayout(FlowPanel *panel, Rectangle bounds, bool measure)
 {
     bool horizontal = panel->e.flags & PANEL_HORIZONTAL;
@@ -120,15 +122,31 @@ static int FlowPanelMessage(Element *element, Message message, int di, void *dp)
     if(message == MSG_PAINT)
     {
         Painter *painter = dp;
-        if(element->flags & PANEL_GRAY)
+        Color backColor = COLOR_CONTROL;
+        ElementMessage(element, MSG_PANEL_GET_COLOR, 0, &backColor);
+        Rectangle bounds = ElementGetBounds(element);
+        PainterSetColor(painter, backColor);
+        PainterFillRect(painter, bounds);
+        if(element->flags & PANEL_BORDER)
         {
-            PainterSetColor(painter, ColorFromGrayscale(0.8f));
-            PainterFillRect(painter, ElementGetBounds(element));
-        }
-        else if(element->flags & PANEL_WHITE)
-        {
-            PainterSetColor(painter, COLOR_WHITE);
-            PainterFillRect(painter, ElementGetBounds(element));
+            if(element->flags & PANEL_BORDER_3D) // top left brighter || bottom right darker
+            {
+                Color brighter = ColorMultiply(backColor, 2);
+                Color darker = ColorMultiply(backColor, 0.5f);
+                PainterSetColor(painter, darker);
+                PainterDrawLine(painter, bounds.l, bounds.t, bounds.r, bounds.t);
+                PainterDrawLine(painter, bounds.l, bounds.t, bounds.l, bounds.b);
+                PainterSetColor(painter, brighter);
+                PainterDrawLine(painter, bounds.l, bounds.b, bounds.r, bounds.b);
+                PainterDrawLine(painter, bounds.r, bounds.b, bounds.r, bounds.t);
+            }
+            else // top left darker || bottom right brighter
+            {
+                Color borderColor = COLOR_BLACK;
+                ElementMessage(element, MSG_PANEL_GET_BORDER_COLOR, 0, &borderColor);
+                PainterSetColor(painter, COLOR_BLACK);
+                PainterDrawRect(painter, bounds);
+            }
         }
     }
     else if(message == MSG_LAYOUT)

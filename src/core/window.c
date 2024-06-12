@@ -123,22 +123,22 @@ static bool InitGLData(Window *window)
     glVertexArrayAttribBinding(window->glData.vertexFormat, 2, 0);
     glVertexArrayVertexBuffer(window->glData.vertexFormat, 0, window->glData.vertexBuffer, 0, sizeof(Vertex));
 
-    Font *font = &window->fontSerif;
-    FontInit(font, 18);
+    Font *font = &window->fonts[Serif];
+    FontInit(font, 16);
     FontLoadMem(gFontSerifRegularData, gFontSerifRegularSize, font, Regular);
     FontLoadMem(gFontSerifItalicData, gFontSerifItalicSize, font, Italic);
     FontLoadMem(gFontSerifBoldData, gFontSerifBoldSize, font, Bold);
     FontLoadMem(gFontSerifBoldItalicData, gFontSerifBoldItalicSize, font, BoldItalic);
 
-    font = &window->fontSans;
-    FontInit(font, 18);
+    font = &window->fonts[Sans];
+    FontInit(font, 16);
     FontLoadMem(gFontSansRegularData, gFontSansRegularSize, font, Regular);
     FontLoadMem(gFontSansItalicData, gFontSansItalicSize, font, Italic);
     FontLoadMem(gFontSansBoldData, gFontSansBoldSize, font, Bold);
     FontLoadMem(gFontSansBoldItalicData, gFontSansBoldItalicSize, font, BoldItalic);
 
-    font = &window->fontMono;
-    FontInit(font, 18);
+    font = &window->fonts[Mono];
+    FontInit(font, 16);
     FontLoadMem(gFontMonoRegularData, gFontMonoRegularSize, font, Regular);
     FontLoadMem(gFontMonoItalicData, gFontMonoItalicSize, font, Italic);
     FontLoadMem(gFontMonoBoldData, gFontMonoBoldSize, font, Bold);
@@ -157,9 +157,8 @@ static void DestroyGLData(Window *window)
     glDeleteProgram(window->glData.shaderProgram);
     glDeleteProgram(window->glData.fontProgram);
     glDeleteBuffers(1, &window->glData.vertexBuffer);
-    FontFree(&window->fontSans);
-    FontFree(&window->fontSerif);
-    FontFree(&window->fontMono);
+    for(size_t i = 0; i < NumVariants; ++i)
+        FontFree(&window->fonts[i]);
 }
 
 static void ResizeTextures(Window *window)
@@ -400,7 +399,7 @@ static void Update(Window *window)
         painter.lineWidth = 1;
 
         painter.framebuffer = gldata.framebuffer;
-        painter.defaultFont = &window->fontSerif;
+        painter.defaultFont = &window->fonts[DefaultVariant];
         painter.fontStyle = Regular;
         painter.program = gldata.shaderProgram;
         painter.fontProgram = gldata.fontProgram;
@@ -467,19 +466,23 @@ NVAPI Element* WindowGetRootElement(Window *window)
 
 NVAPI Font* WindowGetFontVariant(Window *window, FontVariant variant)
 {
-    switch(variant)
-    {
-    case Sans: return &window->fontSans;
-    case Serif: return &window->fontSerif;
-    case Mono: return &window->fontMono;
-    }
-    return NULL;
+    return &window->fonts[variant];
 }
 
 NVAPI void SetMainWindow(Window *window)
 {
     if(window)
         global.mainWindow = window;
+}
+
+NVAPI Element* WindowGetPressed(Window *window)
+{
+    return window->pressed;
+}
+
+NVAPI Element* WindowGetHovered(Window *window)
+{
+    return window->hovered;
 }
 
 #ifdef _WIN32

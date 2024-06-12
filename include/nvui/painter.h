@@ -19,7 +19,6 @@ typedef enum FillStyle
     FILL_HATCH,
 } FillStyle;
 
-struct Painter;
 typedef struct Painter Painter;
 
 NVAPI void PainterReset(Painter *painter);
@@ -28,7 +27,13 @@ NVAPI void PainterSetLineWidth(Painter *painter, float width);
 NVAPI void PainterSetFont(Painter *painter, Font *font);
 NVAPI void PainterSetFontStyle(Painter *painter, FontStyle style);
 
-NVAPI void PainterDrawLine(Painter *painter, int x1, int y1, int x2, int y2);
+NVAPI Font* PainterGetFont(Painter *painter);
+NVAPI FontStyle PainterGetFontStyle(Painter *painter);
+
+NVAPI void PainterSetClip(Painter *painter, Rectangle newClip);
+NVAPI void PainterRestoreClip(Painter *painter);
+
+NVAPI void PainterDrawLine(Painter *painter, float x1, float y1, float x2, float y2);
 NVAPI void PainterDrawRect(Painter *painter, Rectangle rectangle);
 NVAPI void PainterFillRect(Painter *painter, Rectangle rectangle);
 NVAPI void PainterDrawString(Painter *painter, Rectangle bounds, const char *string, size_t bytes, bool centerAlign);
