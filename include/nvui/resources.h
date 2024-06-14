@@ -20,3 +20,4 @@ INCBIN_EXTERN(FontMonoBoldItalic);
 INCTXT_EXTERN(ShaderVert);
 INCTXT_EXTERN(ShaderFrag);
 INCTXT_EXTERN(ShaderFont);
+INCTXT_EXTERN(ShaderCircle);

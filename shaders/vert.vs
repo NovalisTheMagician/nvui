@@ -5,7 +5,8 @@ layout(location=2) in vec4 inColor;
 out vec4 outColor;
 out vec2 outTexCoords;
 layout(location=0) uniform mat4 viewProj;
-void main() {
+void main()
+{
    gl_Position = viewProj * vec4(inPosition, 0, 1);
    outColor = inColor;
    outTexCoords = inTexCoords;
