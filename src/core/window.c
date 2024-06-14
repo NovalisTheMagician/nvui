@@ -78,6 +78,10 @@ static bool InitGLData(Window *window)
     if(!CompileShader(gShaderFontData, gShaderFontSize, &fontShader))
         return false;
 
+    GLuint circleShader = glCreateShader(GL_FRAGMENT_SHADER);
+    if(!CompileShader(gShaderCircleData, gShaderCircleSize, &circleShader))
+        return false;
+
     GLuint program = glCreateProgram();
     if(!LinkProgram(vertShader, fragShader, &program))
         return false;
@@ -86,15 +90,23 @@ static bool InitGLData(Window *window)
     if(!LinkProgram(vertShader, fontShader, &fontProgram))
         return false;
 
+    GLuint circleProgram = glCreateProgram();
+    if(!LinkProgram(vertShader, circleShader, &circleProgram))
+        return false;
+
     glDeleteShader(vertShader);
     glDeleteShader(fragShader);
     glDeleteShader(fontShader);
+    glDeleteShader(circleShader);
 
     window->glData.shaderProgram = program;
     window->glData.fontProgram = fontProgram;
+    window->glData.circleProgram = circleProgram;
     window->glData.projectionLoc = 0; // viewProj
     window->glData.textureLoc = 1; // tex
     window->glData.tintLoc = 2; // tint
+    window->glData.circleCenterLoc = 3; // circleCenter
+    window->glData.circleRadiusLoc = 4; // circleRadius
 
     glCreateTextures(GL_TEXTURE_2D, 1, &window->glData.whiteTexture);
     glTextureStorage2D(window->glData.whiteTexture, 1, GL_RGBA8, 1, 1);
@@ -156,6 +168,7 @@ static void DestroyGLData(Window *window)
     glDeleteVertexArrays(1, &window->glData.vertexFormat);
     glDeleteProgram(window->glData.shaderProgram);
     glDeleteProgram(window->glData.fontProgram);
+    glDeleteProgram(window->glData.circleProgram);
     glDeleteBuffers(1, &window->glData.vertexBuffer);
     for(size_t i = 0; i < NumVariants; ++i)
         FontFree(&window->fonts[i]);
@@ -310,14 +323,10 @@ static void ElementPaint(Element *element, Painter *painter)
     painter->clip = clip;
     glScissor(clip.l, clip.t, clip.r - clip.l, clip.b - clip.t);
     
+    glUseProgram(gldata.shaderProgram);
     glBindTextureUnit(0, gldata.whiteTexture);
     glUniform1i(gldata.textureLoc, 0);
     glUniform4fv(gldata.tintLoc, 1, (float[]){ 1, 1, 1, 1 });
-
-    painter->vertexMap = gldata.mappedVertexBuffer;
-    painter->textureLoc = gldata.textureLoc;
-    painter->tintLoc = gldata.tintLoc;
-    painter->defaultTexture = gldata.whiteTexture;
 
     ElementMessage(element, MSG_PAINT, 0, painter);
 
@@ -398,14 +407,15 @@ static void Update(Window *window)
         painter.clip = RectangleIntersection((Rectangle){ .r = window->width, .b = window->height }, window->updateRegion);
         painter.lineWidth = 1;
 
-        painter.framebuffer = gldata.framebuffer;
         painter.defaultFont = &window->fonts[DefaultVariant];
         painter.fontStyle = Regular;
-        painter.program = gldata.shaderProgram;
-        painter.fontProgram = gldata.fontProgram;
+        painter.gldata = gldata;
+        painter.vertexMap = gldata.mappedVertexBuffer;
 
         glBindFramebuffer(GL_FRAMEBUFFER, gldata.framebuffer);
         glBindVertexArray(gldata.vertexFormat);
+        glUseProgram(gldata.circleProgram);
+        glUniformMatrix4fv(gldata.projectionLoc, 1, GL_FALSE, (float*)&window->projection.raw);
         glUseProgram(gldata.fontProgram);
         glUniformMatrix4fv(gldata.projectionLoc, 1, GL_FALSE, (float*)&window->projection.raw);
         glUseProgram(gldata.shaderProgram);

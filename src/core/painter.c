@@ -71,19 +71,14 @@ NVAPI void PainterDrawLine(Painter *painter, float x1, float y1, float x2, float
     painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = topLeft, .color = white };
     painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = topRight, .color = white };
     painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = bottomLeft, .color = white };
-
-    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = topRight, .color = white };
     painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = bottomRight, .color = white };
-    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = bottomLeft, .color = white };
 
-    glUniform4fv(painter->tintLoc, 1, (float*)&painter->backColor);
-    glDrawArrays(GL_TRIANGLES, startVertex, 6);
+    glUniform4fv(painter->gldata.tintLoc, 1, (float*)&painter->backColor);
+    glDrawArrays(GL_TRIANGLE_STRIP, startVertex, 4);
 }
 
 NVAPI void PainterDrawRect(Painter *painter, Rectangle rectangle)
 {
-    //rectangle = RectangleIntersection(painter->clip, rectangle);
-
     PainterDrawLine(painter, rectangle.l, rectangle.t, rectangle.r, rectangle.t);
     PainterDrawLine(painter, rectangle.r, rectangle.t, rectangle.r, rectangle.b);
     PainterDrawLine(painter, rectangle.r, rectangle.b, rectangle.l, rectangle.b);
@@ -93,7 +88,6 @@ NVAPI void PainterDrawRect(Painter *painter, Rectangle rectangle)
 NVAPI void PainterFillRect(Painter *painter, Rectangle rectangle)
 {
     const size_t startVertex = painter->vertIndex;
-    //rectangle = RectangleIntersection(painter->clip, rectangle);
 
     const vec2s topLeft = { .x = rectangle.l, .y = rectangle.t };
     const vec2s topRight = { .x = rectangle.r, .y = rectangle.t };
@@ -104,13 +98,10 @@ NVAPI void PainterFillRect(Painter *painter, Rectangle rectangle)
     painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = topLeft, .color = white };
     painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = topRight, .color = white };
     painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = bottomLeft, .color = white };
-
-    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = topRight, .color = white };
     painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = bottomRight, .color = white };
-    painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = bottomLeft, .color = white };
 
-    glUniform4fv(painter->tintLoc, 1, (float*)&painter->backColor);
-    glDrawArrays(GL_TRIANGLES, startVertex, 6);
+    glUniform4fv(painter->gldata.tintLoc, 1, (float*)&painter->backColor);
+    glDrawArrays(GL_TRIANGLE_STRIP, startVertex, 4);
 }
 
 NVAPI void PainterDrawString(Painter *painter, Rectangle bounds, const char *string, size_t bytes, bool centerAlign)
@@ -169,16 +160,36 @@ NVAPI void PainterDrawString(Painter *painter, Rectangle bounds, const char *str
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glUseProgram(painter->fontProgram);
-    glUniform1i(painter->textureLoc, 0);
-    glUniform4fv(painter->tintLoc, 1, (float*)&painter->backColor);
+    glUseProgram(painter->gldata.fontProgram);
+    glUniform1i(painter->gldata.textureLoc, 0);
+    glUniform4fv(painter->gldata.tintLoc, 1, (float*)&painter->backColor);
     glBindTextureUnit(0, font->styles[style].texture);
     glDrawArrays(GL_TRIANGLES, startVertex, 6 * bytes);
-    glUseProgram(painter->program);
+    glUseProgram(painter->gldata.shaderProgram);
     glDisable(GL_BLEND);
+}
+
+NVAPI void PainterDrawCircle(Painter *painter, Rectangle rectangle)
+{
+
+}
+
+NVAPI void PainterDrawEllipse(Painter *painter, Rectangle rectangle)
+{
+
+}
+
+NVAPI void PainterFillCircle(Painter *painter, Rectangle rectangle)
+{
+
+}
+
+NVAPI void PainterFillEllipse(Painter *painter, Rectangle rectangle)
+{
+    
 }
 
 NVAPI void PainterClear(Painter *painter)
 {
-    glClearNamedFramebufferfv(painter->framebuffer, GL_COLOR, 0, (float*)&painter->backColor);
+    glClearNamedFramebufferfv(painter->gldata.framebuffer, GL_COLOR, 0, (float*)&painter->backColor);
 }

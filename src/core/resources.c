@@ -18,3 +18,4 @@ INCBIN(FontMonoBoldItalic, "fonts/LiberationMono-BoldItalic.ttf");
 INCTXT(ShaderVert, "shaders/vert.vs");
 INCTXT(ShaderFrag, "shaders/frag.fs");
 INCTXT(ShaderFont, "shaders/font.fs");
+INCTXT(ShaderCircle, "shaders/circle.fs");

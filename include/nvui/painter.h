@@ -35,6 +35,12 @@ NVAPI void PainterRestoreClip(Painter *painter);
 
 NVAPI void PainterDrawLine(Painter *painter, float x1, float y1, float x2, float y2);
 NVAPI void PainterDrawRect(Painter *painter, Rectangle rectangle);
-NVAPI void PainterFillRect(Painter *painter, Rectangle rectangle);
+NVAPI void PainterDrawCircle(Painter *painter, Rectangle rectangle);
+NVAPI void PainterDrawEllipse(Painter *painter, Rectangle rectangle);
 NVAPI void PainterDrawString(Painter *painter, Rectangle bounds, const char *string, size_t bytes, bool centerAlign);
+
+NVAPI void PainterFillRect(Painter *painter, Rectangle rectangle);
+NVAPI void PainterFillCircle(Painter *painter, Rectangle rectangle);
+NVAPI void PainterFillEllipse(Painter *painter, Rectangle rectangle);
+
 NVAPI void PainterClear(Painter *painter);

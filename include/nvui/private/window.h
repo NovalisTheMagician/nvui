@@ -27,7 +27,7 @@
 typedef struct GLData
 {
     GLuint colorRb, depthRb, framebuffer;
-    GLuint shaderProgram, fontProgram, projectionLoc, tintLoc, textureLoc;
+    GLuint shaderProgram, fontProgram, circleProgram, projectionLoc, tintLoc, textureLoc, circleCenterLoc, circleRadiusLoc;
     GLuint vertexFormat, vertexBuffer;
     Vertex *mappedVertexBuffer;
     GLuint whiteTexture, fontTexture;

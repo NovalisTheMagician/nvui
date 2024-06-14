@@ -5,6 +5,8 @@
 #include "../util.h"
 #include "../gltypes.h"
 
+#include "window.h"
+
 #include "glad/gl.h"
 
 typedef struct Painter
@@ -19,8 +21,7 @@ typedef struct Painter
     Font *defaultFont, *font;
     FontStyle fontStyle;
 
-    GLuint fontProgram, program;
-    GLuint framebuffer, textureLoc, tintLoc, defaultTexture;
+    GLData gldata;
     Vertex *vertexMap;
 
     size_t vertIndex;
