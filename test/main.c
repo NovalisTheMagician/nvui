@@ -68,7 +68,7 @@ int main()
 	Window *window = WindowCreate("Hello Window", 800, 600);
 	FlowPanel *contentPanel = FlowPanelCreate(WindowGetRootElement(window), 0);
 	FlowPanelSetGap(contentPanel, 10);
-	//FlowPanelSetBorder(contentPanel, (Rectangle){ 10, 10, 10, 10 });
+	FlowPanelSetBorder(contentPanel, (Rectangle){ 10, 10, 10, 10 });
 
 	FlowPanel *column = FlowPanelCreate((Element*)contentPanel, PANEL_BORDER | ELEMENT_H_FILL | FLOWPANEL_HORIZONTAL);
 	FlowPanelSetGap(column, 10);
@@ -77,6 +77,8 @@ int main()
 	LabelCreate((Element*)column, 0, "Hello World", -1);
 	Button *button = ButtonCreate((Element*)column, 0, "Test2", -1);
 	ElementSetUserHandler((Element*)button, ButtonMessage);
+
+	ButtonCreate((Element*)column, 0, "Test3", -1);
 
 	Checkbox *checkbox = CheckboxCreate((Element*)column, 0, "Check", -1);
 	ElementSetUserHandler((Element*)checkbox, CheckboxMessage);
