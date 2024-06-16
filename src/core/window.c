@@ -7,6 +7,7 @@
 #include "nvui/private/window.h"
 #include "nvui/private/painter.h"
 #include "nvui/resources.h"
+#include "nvui/glutils.h"
 
 #define WINDOW_MIN_WIDTH 200
 #define WINDOW_MIN_HEIGHT 200
@@ -27,71 +28,36 @@ typedef struct GlobalState
 GlobalState global = {};
 static bool glFuncsLoaded = false;
 
-static bool CompileShader(const char *shaderScr, GLint len, GLuint *shader)
-{
-    int success;
-    char infoLog[512];
-
-    glShaderSource(*shader, 1, &shaderScr, &len);
-    glCompileShader(*shader);
-    glGetShaderiv(*shader, GL_COMPILE_STATUS, &success);
-    if(!success)
-    {
-        glGetShaderInfoLog(*shader, sizeof infoLog, NULL, infoLog);
-        printf("Failed to compile Shader: %s\n", infoLog);
-        return false;
-    };
-
-    return true;
-}
-
-static bool LinkProgram(GLuint vertexShader, GLuint fragmentShader, GLuint *program)
-{
-    int success;
-    char infoLog[512];
-
-    glAttachShader(*program, vertexShader);
-    glAttachShader(*program, fragmentShader);
-    glLinkProgram(*program);
-    glGetProgramiv(*program, GL_LINK_STATUS, &success);
-    if(!success)
-    {
-        glGetProgramInfoLog(*program, sizeof infoLog, NULL, infoLog);
-        printf("Failed to link Program: %s\n", infoLog);
-        return false;
-    }
-
-    return true;
-}
-
 static bool InitGLData(Window *window)
 {
+    char logbuffer[512];
+
     GLuint vertShader = glCreateShader(GL_VERTEX_SHADER);
-    if(!CompileShader(gShaderVertData, gShaderVertSize, &vertShader))
+    if(!CompileShader(gShaderVertData, gShaderVertSize, &vertShader, logbuffer, sizeof logbuffer))
         return false;
 
     GLuint fragShader = glCreateShader(GL_FRAGMENT_SHADER);
-    if(!CompileShader(gShaderFragData, gShaderFragSize, &fragShader))
+    if(!CompileShader(gShaderFragData, gShaderFragSize, &fragShader, logbuffer, sizeof logbuffer))
         return false;
 
     GLuint fontShader = glCreateShader(GL_FRAGMENT_SHADER);
-    if(!CompileShader(gShaderFontData, gShaderFontSize, &fontShader))
+    if(!CompileShader(gShaderFontData, gShaderFontSize, &fontShader, logbuffer, sizeof logbuffer))
         return false;
 
     GLuint circleShader = glCreateShader(GL_FRAGMENT_SHADER);
-    if(!CompileShader(gShaderCircleData, gShaderCircleSize, &circleShader))
+    if(!CompileShader(gShaderCircleData, gShaderCircleSize, &circleShader, logbuffer, sizeof logbuffer))
         return false;
 
     GLuint program = glCreateProgram();
-    if(!LinkProgram(vertShader, fragShader, &program))
+    if(!LinkProgram(vertShader, fragShader, &program, logbuffer, sizeof logbuffer))
         return false;
 
     GLuint fontProgram = glCreateProgram();
-    if(!LinkProgram(vertShader, fontShader, &fontProgram))
+    if(!LinkProgram(vertShader, fontShader, &fontProgram, logbuffer, sizeof logbuffer))
         return false;
 
     GLuint circleProgram = glCreateProgram();
-    if(!LinkProgram(vertShader, circleShader, &circleProgram))
+    if(!LinkProgram(vertShader, circleShader, &circleProgram, logbuffer, sizeof logbuffer))
         return false;
 
     glDeleteShader(vertShader);
@@ -108,11 +74,7 @@ static bool InitGLData(Window *window)
     window->glData.circleCenterLoc = 3; // circleCenter
     window->glData.circleRadiusLoc = 4; // circleRadius
 
-    glCreateTextures(GL_TEXTURE_2D, 1, &window->glData.whiteTexture);
-    glTextureStorage2D(window->glData.whiteTexture, 1, GL_RGBA8, 1, 1);
-    glTextureSubImage2D(window->glData.whiteTexture, 0, 0, 0, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (uint8_t[]){ 255, 255, 255, 255 });
-    glTextureParameteri(window->glData.whiteTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(window->glData.whiteTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    window->glData.whiteTexture = CreateSimpleTexture(1, 1, (uint8_t[]){ 255, 255, 255, 255 });
 
     const GLbitfield 
 	mapping_flags = GL_MAP_WRITE_BIT | GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT,
@@ -123,16 +85,14 @@ static bool InitGLData(Window *window)
     glNamedBufferStorage(window->glData.vertexBuffer, bufferSize, NULL, storage_flags);
     window->glData.mappedVertexBuffer = glMapNamedBufferRange(window->glData.vertexBuffer, 0, bufferSize, mapping_flags);
 
-    glCreateVertexArrays(1, &window->glData.vertexFormat);
-    glEnableVertexArrayAttrib(window->glData.vertexFormat, 0);
-    glEnableVertexArrayAttrib(window->glData.vertexFormat, 1);
-    glEnableVertexArrayAttrib(window->glData.vertexFormat, 2);
-    glVertexArrayAttribFormat(window->glData.vertexFormat, 0, 2, GL_FLOAT, GL_FALSE, offsetof(Vertex, position));
-    glVertexArrayAttribFormat(window->glData.vertexFormat, 1, 2, GL_FLOAT, GL_FALSE, offsetof(Vertex, texcoord));
-    glVertexArrayAttribFormat(window->glData.vertexFormat, 2, 4, GL_FLOAT, GL_FALSE, offsetof(Vertex, color));
-    glVertexArrayAttribBinding(window->glData.vertexFormat, 0, 0);
-    glVertexArrayAttribBinding(window->glData.vertexFormat, 1, 0);
-    glVertexArrayAttribBinding(window->glData.vertexFormat, 2, 0);
+    VertexFormat fmt[] =
+    {
+        (VertexFormat){ .size = 2, .type = GL_FLOAT, .offset = offsetof(Vertex, position) },
+        (VertexFormat){ .size = 2, .type = GL_FLOAT, .offset = offsetof(Vertex, texcoord) },
+        (VertexFormat){ .size = 4, .type = GL_FLOAT, .offset = offsetof(Vertex, color) },
+        VERTEX_FORMAT_END
+    };
+    window->glData.vertexFormat = CreateVertexArray(fmt);
     glVertexArrayVertexBuffer(window->glData.vertexFormat, 0, window->glData.vertexBuffer, 0, sizeof(Vertex));
 
     Font *font = &window->fonts[Serif];
@@ -837,9 +797,11 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
 
     wglSwapIntervalEXT(1);
 
-    LoadGLFunctions();
+    if(!LoadGLFunctions())
+        return NULL;
 
-    InitGLData(window);
+    if(!InitGLData(window))
+        return NULL;
 
     ShowWindow(window->hwnd, SW_SHOW);
     PostMessageA(window->hwnd, WM_SIZE, 0, 0);
@@ -1002,9 +964,11 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
 
     glXSwapIntervalEXT(global.display, window->window, 1);
 
-    LoadGLFunctions();
+    if(!LoadGLFunctions())
+        return NULL;
 
-    InitGLData(window);
+    if(!InitGLData(window))
+        return NULL;
 
     window->firstTimeLayout = true;
 
