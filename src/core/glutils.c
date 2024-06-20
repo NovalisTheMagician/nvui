@@ -53,12 +53,9 @@ NVAPI GLuint CreateVertexArray(VertexFormat formatDesc[])
     GLuint vao;
     glCreateVertexArrays(1, &vao);
     int idx = 0;
-    VertexFormat fmt;
-    while(true)
+    VertexFormat fmt = formatDesc[idx];
+    while(fmt.size != -1)
     {
-        fmt = formatDesc[idx];
-        if(fmt.size == -1) break;
-
         glEnableVertexArrayAttrib(vao, idx);
         if(fmt.type == GL_DOUBLE)
             glVertexArrayAttribLFormat(vao, idx, fmt.size, fmt.type, fmt.offset);
@@ -67,7 +64,7 @@ NVAPI GLuint CreateVertexArray(VertexFormat formatDesc[])
         else
             glVertexArrayAttribFormat(vao, idx, fmt.size, fmt.type, fmt.normalized, fmt.offset);
         glVertexArrayAttribBinding(vao, idx, fmt.bind);
-        idx++;
+        fmt = formatDesc[++idx];
     }
     
     return vao;
