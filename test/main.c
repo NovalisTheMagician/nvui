@@ -96,6 +96,7 @@ int main()
 	Initialize();
 
 	Window *window1 = WindowCreate("Window 1", 1000, 800);
+	if(!window1) return 1;
 
 	FlowPanel *column1 = FlowPanelCreate(WindowGetRootElement(window1), 0);
 	FlowPanelSetGap(column1, 10);

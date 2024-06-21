@@ -83,6 +83,7 @@ static int CheckboxMessage(Element *element, Message message, int di, void *dp)
         PainterSetColor(painter, brighter);
         PainterDrawLine(painter, borderBounds.l, borderBounds.b, borderBounds.r, borderBounds.b);
         PainterDrawLine(painter, borderBounds.r, borderBounds.b, borderBounds.r, borderBounds.t);
+        PainterSetLineWidth(painter, 1.0f);
 
         Rectangle textBounds = bounds;
         textBounds.l += 2 * BOX_MARGIN + BOX_SIZE;
