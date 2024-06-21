@@ -12,7 +12,7 @@ FONT_DIR := fonts
 DEFINES := __USE_XOPEN _GNU_SOURCE NVEXPORT
 INC_DIRS := include
 
-LIBS := m triangulate stdc++
+LIBS := m
 LIB_DIRS := 
 
 CC := gcc

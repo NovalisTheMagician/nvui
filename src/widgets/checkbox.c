@@ -79,12 +79,7 @@ static int CheckboxMessage(Element *element, Message message, int di, void *dp)
         }
         Color brighter = ColorFromGrayscale(0.9f);
         Color darker = ColorFromGrayscale(0.25f);
-        PainterSetColor(painter, darker);
-        PainterDrawLine(painter, borderBounds.l, borderBounds.t, borderBounds.r, borderBounds.t);
-        PainterDrawLine(painter, borderBounds.l, borderBounds.t, borderBounds.l, borderBounds.b);
-        PainterSetColor(painter, brighter);
-        PainterDrawLine(painter, borderBounds.l, borderBounds.b, borderBounds.r, borderBounds.b);
-        PainterDrawLine(painter, borderBounds.r, borderBounds.b, borderBounds.r, borderBounds.t);
+        PainterDrawRectLit(painter, borderBounds, brighter, darker);
 
         Rectangle textBounds = bounds;
         textBounds.l += 2 * BOX_MARGIN + BOX_SIZE;

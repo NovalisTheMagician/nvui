@@ -129,18 +129,13 @@ static int FlowPanelMessage(Element *element, Message message, int di, void *dp)
         PainterFillRect(painter, bounds);
         if(element->flags & PANEL_BORDER)
         {
-            if(element->flags & PANEL_BORDER_3D) // top left brighter || bottom right darker
+            if(element->flags & PANEL_BORDER_3D)
             {
                 Color brighter = ColorMultiply(backColor, 2);
                 Color darker = ColorMultiply(backColor, 0.5f);
-                PainterSetColor(painter, darker);
-                PainterDrawLine(painter, bounds.l, bounds.t, bounds.r, bounds.t);
-                PainterDrawLine(painter, bounds.l, bounds.t, bounds.l, bounds.b);
-                PainterSetColor(painter, brighter);
-                PainterDrawLine(painter, bounds.l, bounds.b, bounds.r, bounds.b);
-                PainterDrawLine(painter, bounds.r, bounds.b, bounds.r, bounds.t);
+                PainterDrawRectLit(painter, bounds, brighter, darker);
             }
-            else // top left darker || bottom right brighter
+            else
             {
                 Color borderColor = COLOR_BLACK;
                 ElementMessage(element, MSG_PANEL_GET_BORDER_COLOR, 0, &borderColor);

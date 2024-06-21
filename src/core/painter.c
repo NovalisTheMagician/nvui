@@ -87,10 +87,20 @@ NVAPI void PainterDrawLine(Painter *painter, float x1, float y1, float x2, float
 
 NVAPI void PainterDrawRect(Painter *painter, Rectangle rectangle)
 {
-    PainterDrawLine(painter, rectangle.l, rectangle.t, rectangle.r, rectangle.t);
+    PainterDrawLine(painter, rectangle.l - 1, rectangle.t, rectangle.r, rectangle.t); // fix missing corner pixel
     PainterDrawLine(painter, rectangle.r, rectangle.t, rectangle.r, rectangle.b);
     PainterDrawLine(painter, rectangle.l, rectangle.b, rectangle.r, rectangle.b);
     PainterDrawLine(painter, rectangle.l, rectangle.t, rectangle.l, rectangle.b);
+}
+
+NVAPI void PainterDrawRectLit(Painter *painter, Rectangle rectangle, Color brighter, Color darker)
+{
+    PainterSetColor(painter, darker);
+    PainterDrawLine(painter, rectangle.l - 1, rectangle.t, rectangle.r, rectangle.t); // fix missing corner pixel
+    PainterDrawLine(painter, rectangle.l, rectangle.t, rectangle.l, rectangle.b);
+    PainterSetColor(painter, brighter);
+    PainterDrawLine(painter, rectangle.l, rectangle.b, rectangle.r, rectangle.b);
+    PainterDrawLine(painter, rectangle.r, rectangle.b, rectangle.r, rectangle.t);
 }
 
 NVAPI void PainterFillRect(Painter *painter, Rectangle rectangle)

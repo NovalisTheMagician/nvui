@@ -15,21 +15,11 @@ static void DrawBorder(Painter *painter, Color baseColor, Rectangle bounds, bool
     Color darker = ColorFromGrayscale(0.25f); // ColorMultiply(baseColor, 0.5f);
     if(raised) // top left brighter || bottom right darker
     {
-        PainterSetColor(painter, brighter);
-        PainterDrawLine(painter, bounds.l, bounds.t, bounds.r, bounds.t);
-        PainterDrawLine(painter, bounds.l, bounds.t, bounds.l, bounds.b);
-        PainterSetColor(painter, darker);
-        PainterDrawLine(painter, bounds.l, bounds.b, bounds.r, bounds.b);
-        PainterDrawLine(painter, bounds.r, bounds.b, bounds.r, bounds.t);
+        PainterDrawRectLit(painter, bounds, darker, brighter);
     }
     else // top left darker || bottom right brighter
     {
-        PainterSetColor(painter, darker);
-        PainterDrawLine(painter, bounds.l, bounds.t, bounds.r, bounds.t);
-        PainterDrawLine(painter, bounds.l, bounds.t, bounds.l, bounds.b);
-        PainterSetColor(painter, brighter);
-        PainterDrawLine(painter, bounds.l, bounds.b, bounds.r, bounds.b);
-        PainterDrawLine(painter, bounds.r, bounds.b, bounds.r, bounds.t);
+        PainterDrawRectLit(painter, bounds, brighter, darker);
     }
 }
 
