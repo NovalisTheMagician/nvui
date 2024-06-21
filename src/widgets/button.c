@@ -50,7 +50,6 @@ static int ButtonMessage(Element *element, Message message, int di, void *dp)
         PainterSetColor(painter, c);
         PainterFillRect(painter, bounds);
 
-        PainterSetLineWidth(painter, 1.0f);
         Rectangle raiseBounds = bounds;
         if(element->flags & BUTTON_BORDER)
         {

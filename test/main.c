@@ -152,7 +152,7 @@ int main()
 	FlowPanelSetGap(row2, 10);
 	FlowPanelSetBorder(row2, (Rectangle){ 10, 10, 10, 10 });
 
-	CheckboxCreate((Element*)row3, 0, "Checkmark", -1);
+	CheckboxCreate((Element*)row3, CHECKBOX_BORDER, "Checkmark", -1);
 	CheckboxCreate((Element*)row3, CHECKBOX_CHECK_CROSS, "Cross", -1);
 
 	return MessageLoop();

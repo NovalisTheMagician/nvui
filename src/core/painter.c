@@ -1,9 +1,16 @@
 #include "nvui/private/painter.h"
 
 #include "nvui/private/font.h"
+#include "nvui/private/window.h"
 #include "nvui/util.h"
 
 #include <tgmath.h>
+
+static void SetTint(Painter *painter)
+{
+    PaintPropsData data = { .tint = { .r = painter->backColor.r, .g = painter->backColor.g, .b = painter->backColor.b, .a = painter->backColor.a } };
+    glNamedBufferSubData(painter->gldata.paintPropBuffer, 0, sizeof(PaintPropsData), &data);
+}
 
 NVAPI void PainterReset(Painter *painter)
 {
@@ -57,9 +64,10 @@ NVAPI void PainterRestoreClip(Painter *painter)
 NVAPI void PainterDrawLine(Painter *painter, float x1, float y1, float x2, float y2)
 {
     const size_t startVertex = painter->vertIndex;
+
     const vec2s dir = glms_vec2_normalize(glms_vec2_sub((vec2s){ .x = x2, .y = y2 }, (vec2s){ .x = x1, .y = y1 }));
-    const vec2s leftDir = glms_vec2_scale((vec2s){ .x = dir.y, .y = -dir.x }, painter->lineWidth);
-    const vec2s rightDir = glms_vec2_scale((vec2s){ .x = -dir.y, .y = dir.x }, painter->lineWidth);
+    const vec2s leftDir = glms_vec2_scale((vec2s){ .x = dir.y, .y = -dir.x }, painter->lineWidth / 2);
+    const vec2s rightDir = glms_vec2_scale((vec2s){ .x = -dir.y, .y = dir.x }, painter->lineWidth / 2);
 
     const vec2s topLeft = glms_vec2_add((vec2s){ .x = x1, .y = y1 }, rightDir);
     const vec2s topRight = glms_vec2_add((vec2s){ .x = x2, .y = y2 }, rightDir);
@@ -73,7 +81,7 @@ NVAPI void PainterDrawLine(Painter *painter, float x1, float y1, float x2, float
     painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = bottomLeft, .color = white };
     painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = bottomRight, .color = white };
 
-    glUniform4fv(painter->gldata.tintLoc, 1, (float*)&painter->backColor);
+    SetTint(painter);
     glDrawArrays(GL_TRIANGLE_STRIP, startVertex, 4);
 }
 
@@ -81,8 +89,8 @@ NVAPI void PainterDrawRect(Painter *painter, Rectangle rectangle)
 {
     PainterDrawLine(painter, rectangle.l, rectangle.t, rectangle.r, rectangle.t);
     PainterDrawLine(painter, rectangle.r, rectangle.t, rectangle.r, rectangle.b);
-    PainterDrawLine(painter, rectangle.r, rectangle.b, rectangle.l, rectangle.b);
-    PainterDrawLine(painter, rectangle.l, rectangle.b, rectangle.l, rectangle.t);
+    PainterDrawLine(painter, rectangle.l, rectangle.b, rectangle.r, rectangle.b);
+    PainterDrawLine(painter, rectangle.l, rectangle.t, rectangle.l, rectangle.b);
 }
 
 NVAPI void PainterFillRect(Painter *painter, Rectangle rectangle)
@@ -100,7 +108,7 @@ NVAPI void PainterFillRect(Painter *painter, Rectangle rectangle)
     painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = bottomLeft, .color = white };
     painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = bottomRight, .color = white };
 
-    glUniform4fv(painter->gldata.tintLoc, 1, (float*)&painter->backColor);
+    SetTint(painter);
     glDrawArrays(GL_TRIANGLE_STRIP, startVertex, 4);
 }
 
@@ -162,7 +170,7 @@ NVAPI void PainterDrawString(Painter *painter, Rectangle bounds, const char *str
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glUseProgram(painter->gldata.fontProgram);
     glUniform1i(painter->gldata.textureLoc, 0);
-    glUniform4fv(painter->gldata.tintLoc, 1, (float*)&painter->backColor);
+    SetTint(painter);
     glBindTextureUnit(0, font->styles[style].texture);
     glDrawArrays(GL_TRIANGLES, startVertex, 6 * bytes);
     glUseProgram(painter->gldata.shaderProgram);

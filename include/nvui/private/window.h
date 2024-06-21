@@ -5,6 +5,8 @@
 #include "../gltypes.h"
 #include "../window.h"
 
+#include <cglm/struct.h>
+
 #ifdef _WIN32
 #define Rectangle W32Rectangle
 #define NOMINMAX
@@ -27,11 +29,27 @@
 typedef struct GLData
 {
     GLuint colorRb, depthRb, framebuffer;
-    GLuint shaderProgram, fontProgram, circleProgram, projectionLoc, tintLoc, textureLoc, circleCenterLoc, circleRadiusLoc;
+    GLuint shaderProgram, fontProgram, circleProgram, textureLoc;
     GLuint vertexFormat, vertexBuffer;
     Vertex *mappedVertexBuffer;
     GLuint whiteTexture, fontTexture;
+    GLuint matrixBuffer, paintPropBuffer, circleBuffer;
 } GLData;
+
+typedef struct MatrixData
+{
+    mat4s projection;
+} MatrixData;
+
+typedef struct PaintPropsData
+{
+    vec4s tint;
+} PaintPropsData;
+
+typedef struct CirclePropsData
+{
+    vec2s center, radius;
+} CirclePropsData;
 
 typedef struct Window
 {

@@ -68,11 +68,7 @@ static bool InitGLData(Window *window)
     window->glData.shaderProgram = program;
     window->glData.fontProgram = fontProgram;
     window->glData.circleProgram = circleProgram;
-    window->glData.projectionLoc = 0; // viewProj
-    window->glData.textureLoc = 1; // tex
-    window->glData.tintLoc = 2; // tint
-    window->glData.circleCenterLoc = 3; // circleCenter
-    window->glData.circleRadiusLoc = 4; // circleRadius
+    window->glData.textureLoc = 0; // tex
 
     window->glData.whiteTexture = CreateSimpleTexture(1, 1, (uint8_t[]){ 255, 255, 255, 255 });
 
@@ -115,6 +111,18 @@ static bool InitGLData(Window *window)
     FontLoadMem(gFontMonoItalicData, gFontMonoItalicSize, font, Italic);
     FontLoadMem(gFontMonoBoldData, gFontMonoBoldSize, font, Bold);
     FontLoadMem(gFontMonoBoldItalicData, gFontMonoBoldItalicSize, font, BoldItalic);
+
+    glCreateBuffers(1, &window->glData.matrixBuffer);
+    glNamedBufferStorage(window->glData.matrixBuffer, sizeof(MatrixData), NULL, GL_DYNAMIC_STORAGE_BIT);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, window->glData.matrixBuffer);
+
+    glCreateBuffers(1, &window->glData.paintPropBuffer);
+    glNamedBufferStorage(window->glData.paintPropBuffer, sizeof(PaintPropsData), NULL, GL_DYNAMIC_STORAGE_BIT);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 1, window->glData.paintPropBuffer);
+
+    glCreateBuffers(1, &window->glData.circleBuffer);
+    glNamedBufferStorage(window->glData.circleBuffer, sizeof(CirclePropsData), NULL, GL_DYNAMIC_STORAGE_BIT);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 2, window->glData.circleBuffer);
 
     return true;
 }
@@ -281,12 +289,11 @@ static void ElementPaint(Element *element, Painter *painter)
     const GLData gldata = element->window->glData;
 
     painter->clip = clip;
-    glScissor(clip.l, clip.t, clip.r - clip.l, clip.b - clip.t);
+    glScissor(clip.l - 1, clip.t - 1, clip.r - clip.l + 1, clip.b - clip.t + 1);
     
     glUseProgram(gldata.shaderProgram);
     glBindTextureUnit(0, gldata.whiteTexture);
     glUniform1i(gldata.textureLoc, 0);
-    glUniform4fv(gldata.tintLoc, 1, (float[]){ 1, 1, 1, 1 });
 
     ElementMessage(element, MSG_PAINT, 0, painter);
 
@@ -366,20 +373,19 @@ static void Update(Window *window)
         painter.height = window->height;
         painter.clip = RectangleIntersection((Rectangle){ .r = window->width, .b = window->height }, window->updateRegion);
         painter.lineWidth = 1;
+        painter.pixelSizeW = 1.0f / window->width;
+        painter.pixelSizeH = 1.0f / window->height;
 
         painter.defaultFont = &window->fonts[DefaultVariant];
         painter.fontStyle = Regular;
         painter.gldata = gldata;
         painter.vertexMap = gldata.mappedVertexBuffer;
 
+        glNamedBufferSubData(gldata.matrixBuffer, 0, sizeof(MatrixData), &(MatrixData){ .projection = window->projection });
+
         glBindFramebuffer(GL_FRAMEBUFFER, gldata.framebuffer);
         glBindVertexArray(gldata.vertexFormat);
-        glUseProgram(gldata.circleProgram);
-        glUniformMatrix4fv(gldata.projectionLoc, 1, GL_FALSE, (float*)&window->projection.raw);
-        glUseProgram(gldata.fontProgram);
-        glUniformMatrix4fv(gldata.projectionLoc, 1, GL_FALSE, (float*)&window->projection.raw);
         glUseProgram(gldata.shaderProgram);
-        glUniformMatrix4fv(gldata.projectionLoc, 1, GL_FALSE, (float*)&window->projection.raw);
 
         ElementPaint(&window->e, &painter);
         WindowEndPaint(window, &painter);

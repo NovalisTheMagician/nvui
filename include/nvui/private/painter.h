@@ -7,8 +7,6 @@
 
 #include "window.h"
 
-#include "glad/gl.h"
-
 typedef struct Painter
 {
     Rectangle clip;
@@ -25,4 +23,6 @@ typedef struct Painter
     Vertex *vertexMap;
 
     size_t vertIndex;
+
+    float pixelSizeW, pixelSizeH;
 } Painter;

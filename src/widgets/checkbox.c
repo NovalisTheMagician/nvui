@@ -12,6 +12,7 @@
 
 static void DrawCheckmark(Painter *painter, Rectangle bounds, bool cross)
 {
+    PainterSetLineWidth(painter, 2);
     if(cross)
     {
         PainterDrawLine(painter, bounds.l, bounds.t, bounds.r, bounds.b);
@@ -22,6 +23,7 @@ static void DrawCheckmark(Painter *painter, Rectangle bounds, bool cross)
         PainterDrawLine(painter, bounds.l, bounds.t + (bounds.b - bounds.t) / 2.0f, bounds.l + (bounds.r - bounds.l) * 0.33f, bounds.b);
         PainterDrawLine(painter, bounds.l + (bounds.r - bounds.l) * 0.33f, bounds.b, bounds.r, bounds.t);
     }
+    PainterSetLineWidth(painter, 1);
 }
 
 static int CheckboxMessage(Element *element, Message message, int di, void *dp)
@@ -83,7 +85,6 @@ static int CheckboxMessage(Element *element, Message message, int di, void *dp)
         PainterSetColor(painter, brighter);
         PainterDrawLine(painter, borderBounds.l, borderBounds.b, borderBounds.r, borderBounds.b);
         PainterDrawLine(painter, borderBounds.r, borderBounds.b, borderBounds.r, borderBounds.t);
-        PainterSetLineWidth(painter, 1.0f);
 
         Rectangle textBounds = bounds;
         textBounds.l += 2 * BOX_MARGIN + BOX_SIZE;
