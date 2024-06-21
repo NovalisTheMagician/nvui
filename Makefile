@@ -6,6 +6,8 @@ LIBRARY_STATIC := lib$(LIBRARY).a
 BUILD_DIR := build
 SRC_DIR := src
 SRC_SUBDIRS := core widgets core/platform
+SHADER_DIR := shaders
+FONT_DIR := fonts
 
 DEFINES := __USE_XOPEN _GNU_SOURCE NVEXPORT
 INC_DIRS := include
@@ -72,7 +74,6 @@ endif
 CPPFLAGS := $(addprefix -I,$(INC_DIRS)) $(addprefix -D,$(DEFINES)) -MMD -MP
 LIB_FLAGS := $(addprefix -L,$(LIB_DIRS)) $(addprefix -l,$(LIBS))
 
-# SRCS := $(wildcard $(SRC_DIR)/*.c)
 SRCS := $(wildcard $(SRC_DIR)/*.c) $(foreach pat,$(SRC_SUBDIRS),$(wildcard $(SRC_DIR)/$(pat)/*.c)) src/glad/gl.c
 ifeq ($(PLATFORM),WINDOWS)
     SRCS += src/glad/wgl.c
@@ -80,6 +81,8 @@ else ifeq ($(PLATFORM),LINUX)
     SRCS += src/glad/glx.c
 endif
 OBJS := $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(SRCS))
+
+RESOURCES := $(wildcard $(SHADER_DIR)/*.vs) $(wildcard $(SHADER_DIR)/*.fs) $(wildcard $(FONT_DIR)/*.ttf)
 
 BUILD_DIRS := $(addprefix $(BUILD_DIR)/,$(SRC_SUBDIRS))
 
@@ -103,7 +106,7 @@ $(LIBRARY_NAME): $(OBJS)
 	@echo "LD $@"
 	@$(LD) $(LDFLAGS) -o $@ $(OBJS) $(LIB_FLAGS)
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c Makefile
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c Makefile $(RESOURCES)
 	@echo "CC $<"
 	@$(CC) $(CPPFLAGS) $(CCFLAGS) -c $< -o $@
 
@@ -123,5 +126,6 @@ echo:
 	@echo "INC_DIRS= $(INC_DIRS)"
 	@echo "CCFLAGS= $(CCFLAGS)"
 	@echo "LDFLAGS= $(LDFLAGS)"
+	@echo "RESOURCES= $(RESOURCES)"
 
 -include $(OBJS:.o=.d)

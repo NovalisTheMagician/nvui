@@ -1,7 +1,9 @@
+#include "nvui/color.h"
 #include "nvui/private/widgets.h"
 
 #include "nvui/private/window.h"
 #include "nvui/painter.h"
+#include "nvui/widgets.h"
 
 #include <stdlib.h>
 
@@ -53,27 +55,28 @@ static int CheckboxMessage(Element *element, Message message, int di, void *dp)
         checkBounds.t += 4;
         checkBounds.r -= 4;
         checkBounds.b -= 4;
-        //PainterSetLineWidth(painter, 0.5f);
         if(state == Checked || (state == Indeterminate && !(element->flags & CHECKBOX_TRISTATE)))
             DrawCheckmark(painter, checkBounds, element->flags & CHECKBOX_CHECK_CROSS);
         else if(state == Indeterminate)
             PainterFillRect(painter, checkBounds);
-        //PainterSetLineWidth(painter, 1.0f);
 
-#if 0
-        Color borderColor = COLOR_BLACK;
-        PainterSetColor(painter, borderColor);
-        PainterDrawRect(painter, boxBounds);
-#endif
+        if(element->flags & CHECKBOX_BORDER)
+        {
+            Color borderColor = COLOR_BLACK;
+            PainterSetColor(painter, borderColor);
+            PainterDrawRect(painter, boxBounds);
+        }
 
         Rectangle borderBounds = boxBounds;
-        //borderBounds.l += 1;
-        //borderBounds.t += 1;
-        //borderBounds.r -= 1;
-        //borderBounds.b -= 1;
+        if(element->flags & CHECKBOX_BORDER)
+        {
+            borderBounds.l += 1;
+            borderBounds.t += 1;
+            borderBounds.r -= 1;
+            borderBounds.b -= 1;
+        }
         Color brighter = ColorFromGrayscale(0.9f);
         Color darker = ColorFromGrayscale(0.25f);
-        PainterSetLineWidth(painter, 0.5f);
         PainterSetColor(painter, darker);
         PainterDrawLine(painter, borderBounds.l, borderBounds.t, borderBounds.r, borderBounds.t);
         PainterDrawLine(painter, borderBounds.l, borderBounds.t, borderBounds.l, borderBounds.b);

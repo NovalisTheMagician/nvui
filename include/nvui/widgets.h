@@ -30,6 +30,7 @@ NVAPI void FlowPanelSetBorder(FlowPanel *panel, Rectangle border);
 
 #define CHECKBOX_CHECK_CROSS (1 << 0)
 #define CHECKBOX_TRISTATE (1 << 1)
+#define CHECKBOX_BORDER (1 << 2)
 typedef enum CheckboxState
 {
     Unchecked,
