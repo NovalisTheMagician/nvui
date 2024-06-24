@@ -9,6 +9,8 @@ typedef struct Window Window;
 
 typedef struct Element Element;
 
+#define E_OF(e) (Element*)(e)
+
 #define UPDATE_HOVERED (1)
 #define UPDATE_PRESSED (2)
 

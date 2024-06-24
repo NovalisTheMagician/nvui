@@ -112,61 +112,61 @@ int main()
 	FlowPanelSetGap(column1, 10);
 	FlowPanelSetBorder(column1, (Rectangle){ 10, 10, 10, 10 });
 
-	LabelCreate((Element*)column1, 0, "Label 1", -1);
-	LabelCreate((Element*)column1, 0, "Longer label 2", -1);
+	LabelCreate(E_OF(column1), 0, "Label 1", -1);
+	LabelCreate(E_OF(column1), 0, "Longer label 2", -1);
 
-	FlowPanel *column2 = FlowPanelCreate((Element*)column1, PANEL_BORDER | PANEL_BORDER_3D);
+	FlowPanel *column2 = FlowPanelCreate(E_OF(column1), PANEL_BORDER | PANEL_BORDER_3D);
 	FlowPanelSetGap(column2, 10);
 	FlowPanelSetBorder(column2, (Rectangle){ 10, 10, 10, 10 });
 
-	LabelCreate((Element*)column2, ELEMENT_H_FILL, "Label 3", -1);
-	LabelCreate((Element*)column2, ELEMENT_H_FILL, "Much Longer label 4", -1);
+	LabelCreate(E_OF(column2), ELEMENT_H_FILL, "Label 3", -1);
+	LabelCreate(E_OF(column2), ELEMENT_H_FILL, "Much Longer label 4", -1);
 
-	FlowPanel *column3 = FlowPanelCreate((Element*)column1, PANEL_BORDER | PANEL_BORDER_3D | ELEMENT_H_FILL);
+	FlowPanel *column3 = FlowPanelCreate(E_OF(column1), PANEL_BORDER | PANEL_BORDER_3D | ELEMENT_H_FILL);
 	FlowPanelSetGap(column2, 10);
 	FlowPanelSetBorder(column2, (Rectangle){ 10, 10, 10, 10 });
 
-	LabelCreate((Element*)column3, 0, "Label 4", -1);
-	LabelCreate((Element*)column3, 0, "Longer label 5", -1);
+	LabelCreate(E_OF(column3), 0, "Label 4", -1);
+	LabelCreate(E_OF(column3), 0, "Longer label 5", -1);
 
-	FlowPanel *column4 = FlowPanelCreate((Element*)column1, PANEL_BORDER | ELEMENT_H_FILL);
+	FlowPanel *column4 = FlowPanelCreate(E_OF(column1), PANEL_BORDER | ELEMENT_H_FILL);
 	FlowPanelSetGap(column4, 10);
 	FlowPanelSetBorder(column4, (Rectangle){ 10, 10, 10, 10 });
 
-	LabelCreate((Element*)column4, ELEMENT_H_FILL, "Label 6", -1);
-	LabelCreate((Element*)column4, ELEMENT_H_FILL, "Longer label 7", -1);
+	LabelCreate(E_OF(column4), ELEMENT_H_FILL, "Label 6", -1);
+	LabelCreate(E_OF(column4), ELEMENT_H_FILL, "Longer label 7", -1);
 
-	ButtonCreate((Element*)column1, ELEMENT_V_FILL, "Vertical fill button 1", -1);
-	ButtonCreate((Element*)column1, ELEMENT_V_FILL, "Vertical fill button 2", -1);
-	ButtonCreate((Element*)column1, ELEMENT_V_FILL | ELEMENT_H_FILL, "Vertical and horizontal fill button 3", -1);
-	ButtonCreate((Element*)column1, ELEMENT_V_FILL, "Vertical fill button 4", -1);
+	ButtonCreate(E_OF(column1), ELEMENT_V_FILL, "Vertical fill button 1", -1);
+	ButtonCreate(E_OF(column1), ELEMENT_V_FILL, "Vertical fill button 2", -1);
+	ButtonCreate(E_OF(column1), ELEMENT_V_FILL | ELEMENT_H_FILL, "Vertical and horizontal fill button 3", -1);
+	ButtonCreate(E_OF(column1), ELEMENT_V_FILL, "Vertical fill button 4", -1);
 
-	FlowPanel *row1 = FlowPanelCreate((Element*)column1, PANEL_BORDER | FLOWPANEL_HORIZONTAL);
+	FlowPanel *row1 = FlowPanelCreate(E_OF(column1), PANEL_BORDER | FLOWPANEL_HORIZONTAL);
 	FlowPanelSetGap(row1, 10);
 	FlowPanelSetBorder(row1, (Rectangle){ 10, 10, 10, 10 });
 
-	ButtonCreate((Element*)row1, 0, "Button 1 in row", -1);
-	ButtonCreate((Element*)row1, ELEMENT_H_FILL, "Button 2 in row", -1);
-	ButtonCreate((Element*)row1, 0, "Button 3 in row", -1);
+	ButtonCreate(E_OF(row1), 0, "Button 1 in row", -1);
+	ButtonCreate(E_OF(row1), ELEMENT_H_FILL, "Button 2 in row", -1);
+	ButtonCreate(E_OF(row1), 0, "Button 3 in row", -1);
 
-	FlowPanel *row2 = FlowPanelCreate((Element*)column1, PANEL_BORDER | FLOWPANEL_HORIZONTAL | ELEMENT_H_FILL);
+	FlowPanel *row2 = FlowPanelCreate(E_OF(column1), PANEL_BORDER | FLOWPANEL_HORIZONTAL | ELEMENT_H_FILL);
 	FlowPanelSetGap(row2, 10);
 	FlowPanelSetBorder(row2, (Rectangle){ 10, 10, 10, 10 });
 
-	ButtonCreate((Element*)row2, BUTTON_BORDER, "Button 4 in row", -1);
-	ButtonCreate((Element*)row2, ELEMENT_H_FILL | BUTTON_BORDER, "Button 5 in row", -1);
-	Button *button = ButtonCreate((Element*)row2, BUTTON_BORDER, "Button 6 in row", -1);
-	ElementSetUserHandler((Element*)button, ButtonMessage);
+	ButtonCreate(E_OF(row2), BUTTON_BORDER, "Button 4 in row", -1);
+	ButtonCreate(E_OF(row2), ELEMENT_H_FILL | BUTTON_BORDER, "Button 5 in row", -1);
+	Button *button = ButtonCreate(E_OF(row2), BUTTON_BORDER, "Button 6 in row", -1);
+	ElementSetUserHandler(E_OF(button), ButtonMessage);
 
-	FlowPanel *row3 = FlowPanelCreate((Element*)column1, PANEL_BORDER | FLOWPANEL_HORIZONTAL | ELEMENT_H_FILL);
+	FlowPanel *row3 = FlowPanelCreate(E_OF(column1), PANEL_BORDER | FLOWPANEL_HORIZONTAL | ELEMENT_H_FILL);
 	FlowPanelSetGap(row3, 10);
 	FlowPanelSetBorder(row3, (Rectangle){ 10, 10, 10, 10 });
 
-	CheckboxCreate((Element*)row3, CHECKBOX_BORDER, "Checkmark", -1);
-	CheckboxCreate((Element*)row3, CHECKBOX_CHECK_CROSS, "Cross", -1);
-	Textfield *textfield = TextfieldCreate((Element*)row3, 0, 7);
-	ElementSetUserHandler((Element*)textfield, TextfieldMessage);
-	Textfield *textfield2 = TextfieldCreate((Element*)row3, ELEMENT_H_FILL, 255);
+	CheckboxCreate(E_OF(row3), CHECKBOX_BORDER, "Checkmark", -1);
+	CheckboxCreate(E_OF(row3), CHECKBOX_CHECK_CROSS, "Cross", -1);
+	Textfield *textfield = TextfieldCreate(E_OF(row3), 0, 7);
+	ElementSetUserHandler(E_OF(textfield), TextfieldMessage);
+	Textfield *textfield2 = TextfieldCreate(E_OF(row3), ELEMENT_H_FILL, 255);
 	TextfieldSetText(textfield2, "HelloWorld!!!", -1);
 
 	return MessageLoop();
