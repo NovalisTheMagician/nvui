@@ -82,8 +82,8 @@ static int ButtonMessage(Element *element, Message message, int di, void *dp)
     else if(message == MSG_GET_WIDTH)
     {
         Font *font = WindowGetFontVariant(element->window, DefaultVariant);
-        RectangleF textRect = FontMeasureString(font, DefaultStyle, button->text, button->textBytes);
-        int width = round(textRect.r - textRect.l);
+        float w = FontMeasureString(font, DefaultStyle, button->text, button->textBytes, 0);
+        int width = round(w);
         return 30 + width;
     }
     else if(message == MSG_GET_HEIGHT)
@@ -99,9 +99,4 @@ NVAPI Button* ButtonCreate(Element *parent, uint32_t flags, const char *text, ss
     Button *button = (Button*)ElementCreate(sizeof *button, parent, flags, ButtonMessage);
     StringCopy(&button->text, &button->textBytes, text, textBytes);
     return button;
-}
-
-NVAPI Element* ButtonGetElement(Button *button)
-{
-    return &button->e;
 }

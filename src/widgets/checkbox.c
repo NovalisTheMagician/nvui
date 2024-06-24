@@ -95,8 +95,8 @@ static int CheckboxMessage(Element *element, Message message, int di, void *dp)
     else if(message == MSG_GET_WIDTH)
     {
         Font *font = WindowGetFontVariant(element->window, DefaultVariant);
-        RectangleF textRect = FontMeasureString(font, DefaultStyle, checkbox->text, checkbox->textBytes);
-        int width = round(textRect.r - textRect.l);
+        float w = FontMeasureString(font, DefaultStyle, checkbox->text, checkbox->textBytes, 0);
+        int width = round(w);
         return 2 * BOX_MARGIN + BOX_SIZE + width;
     }
     else if(message == MSG_GET_HEIGHT)

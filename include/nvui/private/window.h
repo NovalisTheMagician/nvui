@@ -57,7 +57,7 @@ typedef struct Window
     int width, height;
     Rectangle updateRegion;
     int cursorX, cursorY;
-    Element *hovered, *pressed;
+    Element *hovered, *pressed, *focused;
     int pressedButton;
 
     GLData glData;

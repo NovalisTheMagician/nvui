@@ -26,3 +26,4 @@ NVAPI Element* WindowGetRootElement(Window *window);
 NVAPI Font* WindowGetFontVariant(Window *window, FontVariant variant);
 NVAPI Element* WindowGetPressed(Window *window);
 NVAPI Element* WindowGetHovered(Window *window);
+NVAPI Element* WindowGetFocused(Window *window);

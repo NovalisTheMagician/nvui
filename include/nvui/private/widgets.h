@@ -1,5 +1,6 @@
 #pragma once
 
+#include <corecrt.h>
 #include <stddef.h>
 
 #include "../widgets.h"
@@ -33,3 +34,12 @@ typedef struct Checkbox
     size_t textBytes;
     CheckboxState state;
 } Checkbox;
+
+typedef struct Textfield
+{
+    Element e;
+    char *text;
+    size_t maxTextBytes, textBytes;
+    size_t cursorPos;
+    size_t selStart, selEnd;
+} Textfield;

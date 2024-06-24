@@ -8,6 +8,7 @@
 #include "nvui/private/painter.h"
 #include "nvui/resources.h"
 #include "nvui/glutils.h"
+#include "nvui/keys.h"
 
 #define WINDOW_MIN_WIDTH 200
 #define WINDOW_MIN_HEIGHT 200
@@ -138,6 +139,7 @@ static void DestroyGLData(Window *window)
     glDeleteProgram(window->glData.fontProgram);
     glDeleteProgram(window->glData.circleProgram);
     glDeleteBuffers(1, &window->glData.vertexBuffer);
+    glDeleteBuffers(3, (GLuint[]){ window->glData.matrixBuffer, window->glData.paintPropBuffer, window->glData.circleBuffer });
     for(size_t i = 0; i < NumVariants; ++i)
         FontFree(&window->fonts[i]);
 }
@@ -191,6 +193,8 @@ static void WindowSetPressed(Window *window, Element *element, int button)
 
     window->pressed = element;
     window->pressedButton = button;
+    if(element)
+        window->focused = element;
 
     if(previous) ElementMessage(previous, MSG_UPDATE, UPDATE_PRESSED, NULL);
     if(element) ElementMessage(element, MSG_UPDATE, UPDATE_PRESSED, NULL);
@@ -277,6 +281,23 @@ static void WindowInputEvent(Window *window, Message message, int di, void *dp)
     }
 
     InvalidateWindow(window);
+}
+
+static void WindowKeyEvent(Window *window, Message message, int di, void *dp)
+{
+    if(window->focused)
+    {
+        ElementMessage(window->focused, message, di, dp);
+    }
+}
+
+static void WindowCharEvent(Window *window, Message message, int di, void *dp)
+{
+    if(window->focused)
+    {
+        di = di == '\r' ? '\n' : di;
+        ElementMessage(window->focused, message, di, dp);
+    }
 }
 
 static void WindowEndPaint(Window *window, Painter *painter);
@@ -461,6 +482,11 @@ NVAPI Element* WindowGetHovered(Window *window)
     return window->hovered;
 }
 
+NVAPI Element* WindowGetFocused(Window *window)
+{
+    return window->focused;
+}
+
 #ifdef _WIN32
 #define WINDOW_CLASS "NVWINDOW"
 
@@ -538,6 +564,13 @@ static bool LoadGLFunctions(void)
 
 static void WindowEndPaint(Window *window, Painter *painter)
 {
+}
+
+static Keycode TranslateKey(WPARAM wParam)
+{
+    if(wParam == VK_LEFT) return KEY_LEFT;
+    if(wParam == VK_RIGHT) return KEY_RIGHT;
+    return KEY_NONE;
 }
 
 void InvalidateWindow(Window *window)
@@ -678,6 +711,28 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
         {
             if(window->pressedButton == 3) ReleaseCapture();
             WindowInputEvent(window, MSG_RIGHT_UP, 0, NULL);
+        }
+        break;
+    case WM_KEYDOWN:
+        {
+            int key = TranslateKey(wParam);
+            WindowKeyEvent(window, MSG_KEY_DOWN, key, NULL);
+        }
+        break;
+    case WM_KEYUP:
+        {
+            int key = TranslateKey(wParam);
+            WindowKeyEvent(window, MSG_KEY_UP, key, NULL);
+        }
+        break;
+    case WM_CHAR:
+        {
+            WindowCharEvent(window, MSG_CHAR, wParam, NULL);
+        }
+        break;
+    case WM_UNICHAR:
+        {
+            
         }
         break;
     case WM_PAINT:

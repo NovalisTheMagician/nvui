@@ -10,14 +10,12 @@
 typedef struct Button Button;
 
 NVAPI Button* ButtonCreate(Element *parent, uint32_t flags, const char *text, ssize_t textBytes);
-NVAPI Element* ButtonGetElement(Button *button);
 
 #define LABEL_CENTER (1 << 0)
 typedef struct Label Label;
 
 NVAPI Label* LabelCreate(Element *parent, uint32_t flags, const char *text, ssize_t textBytes);
 NVAPI void LabelSetContent(Label *label, const char *text, ssize_t textBytes);
-NVAPI Element* LabelGetElement(Label *label);
 
 #define FLOWPANEL_HORIZONTAL (1 << 0)
 #define PANEL_BORDER (1 << 1)
@@ -42,3 +40,10 @@ typedef struct Checkbox Checkbox;
 NVAPI Checkbox* CheckboxCreate(Element *parent, uint32_t flags, const char *text, ssize_t textBytes);
 NVAPI void CheckboxSetState(Checkbox *checkbox, CheckboxState state);
 NVAPI CheckboxState CheckboxGetState(Checkbox *checkbox);
+
+#define TEXTFIELD_BORDER (1 << 2)
+typedef struct Textfield Textfield;
+
+NVAPI Textfield* TextfieldCreate(Element *parent, uint32_t flags, size_t maxChars);
+NVAPI void TextfieldSetText(Textfield *textfield, const char *text, ssize_t textBytes);
+NVAPI char* TextfieldGetText(Textfield *textfield, size_t *textBytes);

@@ -52,6 +52,7 @@ NVAPI bool FontLoadMem(const uint8_t *data, size_t len, Font *font, FontStyle st
     font->styles[style].ascender = ascend*scale;
     font->styles[style].descender = descent*scale;
     font->styles[style].linegap = linegap*scale;
+    font->styles[style].scale = scale;
 
     stbtt_pack_context ttctx = {};
     stbtt_PackBegin(&ttctx, font->styles[style].bitmap, font->width, font->height, 0, 1, NULL);
@@ -100,7 +101,7 @@ NVAPI RectangleF FontGetQuad(Font *font, FontStyle style, uint32_t codepoint, fl
     return (RectangleF){ .l = quad.x0, .r = quad.x1, .t = quad.y0, .b = quad.y1 };
 }
 
-NVAPI RectangleF FontMeasureString(Font *font, FontStyle style, const char *string, size_t bytes)
+NVAPI RectangleF FontMeasureStringRect(Font *font, FontStyle style, const char *string, size_t bytes, uint32_t flags)
 {
     FontStyleData *data = &font->styles[style];
 
@@ -119,6 +120,26 @@ NVAPI RectangleF FontMeasureString(Font *font, FontStyle style, const char *stri
         rect = RectangleFBounding(rect, (RectangleF){ .l = quad.x0, .r = quad.x1, .t = quad.y0, .b = quad.y1 });
     }
     return rect;
+}
+
+NVAPI float FontMeasureString(Font *font, FontStyle style, const char *string, size_t bytes, uint32_t flags)
+{
+    FontStyleData *data = &font->styles[style];
+
+    float w = 0;
+    for(size_t i = 0; i < bytes; ++i)
+    {
+        uint32_t codepoint = string[i];
+        if(codepoint < 32 || codepoint > 127)
+            codepoint = '?';
+
+        int advancewidth, leftsidebearing;
+        stbtt_GetCodepointHMetrics(&data->fontinfo, codepoint, &advancewidth, &leftsidebearing);
+        w += advancewidth * data->scale;
+        if(i < bytes-1)
+            w += FontKernAdvance(font, style, codepoint, string[i+1]);
+    }
+    return w;
 }
 
 NVAPI float FontKernAdvance(Font *font, FontStyle style, uint32_t current, uint32_t next)

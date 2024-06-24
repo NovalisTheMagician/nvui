@@ -10,7 +10,7 @@ typedef struct FontStyleData
     stbtt_packedchar *packedchars;
     stbtt_fontinfo fontinfo;
 
-    float baseline, ascender, descender, linegap;
+    float baseline, ascender, descender, linegap, advancewidth, scale;
 } FontStyleData;
 
 typedef struct Font

@@ -138,7 +138,7 @@ NVAPI void PainterDrawString(Painter *painter, Rectangle bounds, const char *str
     float x = (float)bounds.l;
     float y = (float)bounds.t;
 
-    RectangleF rect = FontMeasureString(font, style, string, bytes);
+    RectangleF rect = FontMeasureStringRect(font, style, string, bytes, 0);
     if(centerAlign)
     {
         x += round((bounds.r - bounds.l - rect.r - rect.l) / 2);

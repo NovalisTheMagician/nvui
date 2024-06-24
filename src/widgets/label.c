@@ -27,8 +27,8 @@ static int LabelMessage(Element *element, Message message, int di, void *dp)
     else if(message == MSG_GET_WIDTH)
     {
         Font *font = WindowGetFontVariant(element->window, DefaultVariant);
-        RectangleF textRect = FontMeasureString(font, DefaultStyle, label->text, label->textBytes);
-        return round(textRect.r - textRect.l);
+        float w = FontMeasureString(font, DefaultStyle, label->text, label->textBytes, 0);
+        return round(w);
     }
     else if(message == MSG_GET_HEIGHT)
     {
@@ -50,9 +50,4 @@ NVAPI void LabelSetContent(Label *label, const char *text, ssize_t textBytes)
 {
     StringCopy(&label->text, &label->textBytes, text, textBytes);
     ElementRepaint(&label->e, NULL);
-}
-
-NVAPI Element* LabelGetElement(Label *label)
-{
-    return &label->e;
 }

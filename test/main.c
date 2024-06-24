@@ -46,6 +46,16 @@ int ButtonMessage(Element *element, Message message, int di, void *dp)
 	return 0;
 }
 
+int TextfieldMessage(Element *element, Message message, int di, void *dp)
+{
+	Textfield *textfield = (Textfield*)element;
+	if(message == MSG_TEXTFIELD_TEXT_CHANGE)
+	{
+		printf("Text changed to: %s\n", TextfieldGetText(textfield, NULL));
+	}
+	return 0;
+}
+
 #if 0
 
 int CheckboxMessage(Element *element, Message message, int di, void *dp)
@@ -149,11 +159,15 @@ int main()
 	ElementSetUserHandler((Element*)button, ButtonMessage);
 
 	FlowPanel *row3 = FlowPanelCreate((Element*)column1, PANEL_BORDER | FLOWPANEL_HORIZONTAL | ELEMENT_H_FILL);
-	FlowPanelSetGap(row2, 10);
-	FlowPanelSetBorder(row2, (Rectangle){ 10, 10, 10, 10 });
+	FlowPanelSetGap(row3, 10);
+	FlowPanelSetBorder(row3, (Rectangle){ 10, 10, 10, 10 });
 
 	CheckboxCreate((Element*)row3, CHECKBOX_BORDER, "Checkmark", -1);
 	CheckboxCreate((Element*)row3, CHECKBOX_CHECK_CROSS, "Cross", -1);
+	Textfield *textfield = TextfieldCreate((Element*)row3, 0, 7);
+	ElementSetUserHandler((Element*)textfield, TextfieldMessage);
+	Textfield *textfield2 = TextfieldCreate((Element*)row3, ELEMENT_H_FILL, 255);
+	TextfieldSetText(textfield2, "HelloWorld!!!", -1);
 
 	return MessageLoop();
 }

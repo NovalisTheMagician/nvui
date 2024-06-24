@@ -99,7 +99,7 @@ NVAPI void ElementRepaint(Element *element, Rectangle *region)
             element->window->updateRegion = r;
         }
 
-        //InvalidateWindow(element->window);
+        InvalidateWindow(element->window);
     }
 }
 
