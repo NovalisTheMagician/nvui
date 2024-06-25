@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "nvui/element.h"
 #include "nvui/private/window.h"
 #include "nvui/private/painter.h"
 #include "nvui/resources.h"
@@ -985,6 +986,7 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
     if(!window->visual) return NULL;
 
     XSetWindowAttributes windowAttrib = {};
+    windowAttrib.bit_gravity = StaticGravity;
     windowAttrib.border_pixel = BlackPixel(global.display, screenId);
     windowAttrib.background_pixel = WhitePixel(global.display, screenId);
     windowAttrib.override_redirect = True;
@@ -1057,6 +1059,15 @@ static void CloseWindow(Window *window)
     XSync(global.display, False);
 }
 #endif
+
+static Keycode TranslateKey(unsigned int xkey)
+{
+    if(xkey == XKeysymToKeycode(global.display, XK_Left))
+        return KEY_LEFT;
+    else if(xkey == XKeysymToKeycode(global.display, XK_Right))
+        return KEY_RIGHT;
+    return KEY_NONE;
+}
 
 static void CloseWindow(Window *window)
 {
@@ -1164,6 +1175,23 @@ NVAPI int MessageLoop(void)
                 if(event.xbutton.button >= 1 && event.xbutton.button <= 3)
                 {
                     WindowInputEvent(window, (Message)((event.type == ButtonPress ? MSG_LEFT_DOWN : MSG_LEFT_UP) + event.xbutton.button * 2 - 2), 0, NULL);
+                }
+            }
+            break;
+        case KeyPress:
+        case KeyRelease:
+            {
+                Window *window = FindWindow(event.xkey.window);
+                if(!window) continue;
+
+                Keycode key = TranslateKey(event.xkey.keycode);
+                WindowKeyEvent(window, event.type == KeyPress ? MSG_KEY_DOWN : MSG_KEY_UP, key, NULL);
+
+                if(event.type == KeyPress)
+                {
+                    char buffer[16] = {};
+                    XLookupString(&event.xkey, buffer, sizeof buffer, NULL, NULL);
+                    WindowCharEvent(window, MSG_CHAR, buffer[0], NULL);
                 }
             }
             break;

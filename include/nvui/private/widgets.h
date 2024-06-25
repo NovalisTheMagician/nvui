@@ -1,6 +1,5 @@
 #pragma once
 
-#include <corecrt.h>
 #include <stddef.h>
 
 #include "../widgets.h"

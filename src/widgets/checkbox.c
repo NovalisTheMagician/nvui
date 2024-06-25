@@ -15,8 +15,8 @@ static void DrawCheckmark(Painter *painter, Rectangle bounds, bool cross)
     PainterSetLineWidth(painter, 2);
     if(cross)
     {
-        PainterDrawLine(painter, bounds.l, bounds.t, bounds.r, bounds.b);
-        PainterDrawLine(painter, bounds.l, bounds.b, bounds.r, bounds.t);
+        PainterDrawLine(painter, bounds.l, bounds.t - 1, bounds.r, bounds.b);
+        PainterDrawLine(painter, bounds.l, bounds.b, bounds.r, bounds.t - 1);
     }
     else
     {
