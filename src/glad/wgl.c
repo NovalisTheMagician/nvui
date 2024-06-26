@@ -30,6 +30,7 @@ int GLAD_WGL_ARB_extensions_string = 0;
 int GLAD_WGL_ARB_framebuffer_sRGB = 0;
 int GLAD_WGL_ARB_multisample = 0;
 int GLAD_WGL_ARB_pixel_format = 0;
+int GLAD_WGL_ARB_pixel_format_float = 0;
 int GLAD_WGL_EXT_extensions_string = 0;
 int GLAD_WGL_EXT_swap_control = 0;
 int GLAD_WGL_EXT_swap_control_tear = 0;
@@ -116,6 +117,7 @@ static int glad_wgl_find_extensions_wgl(HDC hdc) {
     GLAD_WGL_ARB_framebuffer_sRGB = glad_wgl_has_extension(hdc, "WGL_ARB_framebuffer_sRGB");
     GLAD_WGL_ARB_multisample = glad_wgl_has_extension(hdc, "WGL_ARB_multisample");
     GLAD_WGL_ARB_pixel_format = glad_wgl_has_extension(hdc, "WGL_ARB_pixel_format");
+    GLAD_WGL_ARB_pixel_format_float = glad_wgl_has_extension(hdc, "WGL_ARB_pixel_format_float");
     GLAD_WGL_EXT_extensions_string = glad_wgl_has_extension(hdc, "WGL_EXT_extensions_string");
     GLAD_WGL_EXT_swap_control = glad_wgl_has_extension(hdc, "WGL_EXT_swap_control");
     GLAD_WGL_EXT_swap_control_tear = glad_wgl_has_extension(hdc, "WGL_EXT_swap_control_tear");

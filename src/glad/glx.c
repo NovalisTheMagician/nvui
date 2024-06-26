@@ -30,7 +30,9 @@ int GLAD_GLX_VERSION_1_3 = 0;
 int GLAD_GLX_VERSION_1_4 = 0;
 int GLAD_GLX_ARB_create_context = 0;
 int GLAD_GLX_ARB_create_context_profile = 0;
+int GLAD_GLX_ARB_fbconfig_float = 0;
 int GLAD_GLX_ARB_framebuffer_sRGB = 0;
+int GLAD_GLX_ARB_get_proc_address = 0;
 int GLAD_GLX_ARB_multisample = 0;
 int GLAD_GLX_EXT_swap_control = 0;
 int GLAD_GLX_EXT_swap_control_tear = 0;
@@ -61,6 +63,7 @@ PFNGLXGETCURRENTREADDRAWABLEPROC glad_glXGetCurrentReadDrawable = NULL;
 PFNGLXGETFBCONFIGATTRIBPROC glad_glXGetFBConfigAttrib = NULL;
 PFNGLXGETFBCONFIGSPROC glad_glXGetFBConfigs = NULL;
 PFNGLXGETPROCADDRESSPROC glad_glXGetProcAddress = NULL;
+PFNGLXGETPROCADDRESSARBPROC glad_glXGetProcAddressARB = NULL;
 PFNGLXGETSELECTEDEVENTPROC glad_glXGetSelectedEvent = NULL;
 PFNGLXGETVISUALFROMFBCONFIGPROC glad_glXGetVisualFromFBConfig = NULL;
 PFNGLXISDIRECTPROC glad_glXIsDirect = NULL;
@@ -138,6 +141,10 @@ static void glad_glx_load_GLX_ARB_create_context( GLADuserptrloadfunc load, void
     if(!GLAD_GLX_ARB_create_context) return;
     glad_glXCreateContextAttribsARB = (PFNGLXCREATECONTEXTATTRIBSARBPROC) load(userptr, "glXCreateContextAttribsARB");
 }
+static void glad_glx_load_GLX_ARB_get_proc_address( GLADuserptrloadfunc load, void* userptr) {
+    if(!GLAD_GLX_ARB_get_proc_address) return;
+    glad_glXGetProcAddressARB = (PFNGLXGETPROCADDRESSARBPROC) load(userptr, "glXGetProcAddressARB");
+}
 static void glad_glx_load_GLX_EXT_swap_control( GLADuserptrloadfunc load, void* userptr) {
     if(!GLAD_GLX_EXT_swap_control) return;
     glad_glXSwapIntervalEXT = (PFNGLXSWAPINTERVALEXTPROC) load(userptr, "glXSwapIntervalEXT");
@@ -189,7 +196,9 @@ static GLADapiproc glad_glx_get_proc_from_userptr(void *userptr, const char* nam
 static int glad_glx_find_extensions(Display *display, int screen) {
     GLAD_GLX_ARB_create_context = glad_glx_has_extension(display, screen, "GLX_ARB_create_context");
     GLAD_GLX_ARB_create_context_profile = glad_glx_has_extension(display, screen, "GLX_ARB_create_context_profile");
+    GLAD_GLX_ARB_fbconfig_float = glad_glx_has_extension(display, screen, "GLX_ARB_fbconfig_float");
     GLAD_GLX_ARB_framebuffer_sRGB = glad_glx_has_extension(display, screen, "GLX_ARB_framebuffer_sRGB");
+    GLAD_GLX_ARB_get_proc_address = glad_glx_has_extension(display, screen, "GLX_ARB_get_proc_address");
     GLAD_GLX_ARB_multisample = glad_glx_has_extension(display, screen, "GLX_ARB_multisample");
     GLAD_GLX_EXT_swap_control = glad_glx_has_extension(display, screen, "GLX_EXT_swap_control");
     GLAD_GLX_EXT_swap_control_tear = glad_glx_has_extension(display, screen, "GLX_EXT_swap_control_tear");
@@ -233,6 +242,7 @@ int gladLoadGLXUserPtr(Display *display, int screen, GLADuserptrloadfunc load, v
 
     if (!glad_glx_find_extensions(display, screen)) return 0;
     glad_glx_load_GLX_ARB_create_context(load, userptr);
+    glad_glx_load_GLX_ARB_get_proc_address(load, userptr);
     glad_glx_load_GLX_EXT_swap_control(load, userptr);
 
 
