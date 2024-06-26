@@ -61,3 +61,8 @@ NVAPI Color ColorMultiply(Color color, float v)
     float b = Clamp(color.b * v, 0.0f, 1.0f);
     return (Color){ .r = r, .g = g, .b = b, .a = color.a };
 }
+
+NVAPI vec4s ColorToVec4(Color color)
+{
+    return (vec4s){ .r = color.r, .g = color.g, .b = color.b, .a = color.a };
+}

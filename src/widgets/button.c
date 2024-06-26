@@ -11,8 +11,8 @@
 
 static void DrawBorder(Painter *painter, Color baseColor, Rectangle bounds, bool raised)
 {
-    Color brighter = ColorFromGrayscale(0.9f); // ColorMultiply(baseColor, 2);
-    Color darker = ColorFromGrayscale(0.25f); // ColorMultiply(baseColor, 0.5f);
+    Color brighter = ColorFromGrayscale(0.9f);
+    Color darker = ColorFromGrayscale(0.25f);
     if(raised) // top left brighter || bottom right darker
     {
         PainterDrawRectLit(painter, bounds, darker, brighter);
@@ -33,6 +33,7 @@ static int ButtonMessage(Element *element, Message message, int di, void *dp)
         Rectangle bounds = ElementGetBounds(element);
 
         bool pressed = element->window->pressed == element && element->window->hovered == element;
+        bool focused = element->window->focused == element;
 
         Color c = COLOR_CONTROL;
         ElementMessage(element, MSG_BUTTON_GET_COLOR, pressed, &c);
@@ -41,17 +42,14 @@ static int ButtonMessage(Element *element, Message message, int di, void *dp)
         PainterFillRect(painter, bounds);
 
         Rectangle raiseBounds = bounds;
-        if(element->flags & BUTTON_BORDER)
-        {
-            raiseBounds.l += 1;
-            raiseBounds.t += 1;
-            raiseBounds.r -= 1;
-            raiseBounds.b -= 1;
-        }
+        raiseBounds.l += 1;
+        raiseBounds.t += 1;
+        raiseBounds.r -= 1;
+        raiseBounds.b -= 1;
 
         DrawBorder(painter, c, raiseBounds, !pressed);
 
-        if(element->flags & BUTTON_BORDER)
+        if(element->flags & BUTTON_BORDER || focused)
         {
             PainterSetColor(painter, COLOR_BLACK);
             PainterDrawRect(painter, bounds);
@@ -99,4 +97,9 @@ NVAPI Button* ButtonCreate(Element *parent, uint32_t flags, const char *text, ss
     Button *button = (Button*)ElementCreate(sizeof *button, parent, flags, ButtonMessage);
     StringCopy(&button->text, &button->textBytes, text, textBytes);
     return button;
+}
+
+NVAPI void ButtonSetText(Button *button, const char *text, ssize_t textBytes)
+{
+    StringCopy(&button->text, &button->textBytes, text, textBytes);
 }

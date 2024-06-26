@@ -294,6 +294,7 @@ static void WindowKeyEvent(Window *window, Message message, int di, void *dp)
 
 static void WindowCharEvent(Window *window, Message message, int di, void *dp)
 {
+    //printf("%c %d\n", di, di);
     if(window->focused)
     {
         di = di == '\r' ? '\n' : di;
@@ -569,8 +570,39 @@ static void WindowEndPaint(Window *window, Painter *painter)
 
 static Keycode TranslateKey(WPARAM wParam)
 {
-    if(wParam == VK_LEFT) return KEY_LEFT;
-    if(wParam == VK_RIGHT) return KEY_RIGHT;
+    switch(wParam)
+    {
+    case VK_LEFT: return KEY_LEFT;
+    case VK_RIGHT: return KEY_RIGHT;
+    case VK_UP: return KEY_UP;
+    case VK_DOWN: return KEY_DOWN;
+    case VK_RETURN: return KEY_ENTER;
+    case VK_BACK: return KEY_BACKSPACE;
+    case VK_LCONTROL: return KEY_LCTRL;
+    case VK_RCONTROL: return KEY_RCTRL;
+    //case VK_LSHIFT: return KEY_LSHIFT;
+    //case VK_RSHIFT: return KEY_RSHIFT;
+    //case VK_LMENU: return KEY_LALT;
+    //case VK_RMENU: return KEY_RALT;
+    //case VK_LWIN: return KEY_LMETA;
+    //case VK_RWIN: return KEY_RMETA;
+
+    case VK_SHIFT: return KEY_LSHIFT;
+    case VK_CONTROL: return KEY_LCTRL;
+    case VK_MENU: return KEY_LALT;
+
+    case VK_APPS: return KEY_MENU;
+    case VK_CAPITAL: return KEY_CAPSLOCK;
+    case VK_ESCAPE: return KEY_ESCAPE;
+    case VK_TAB: return KEY_TAB;
+    case VK_DELETE: return KEY_DELETE;
+    case VK_INSERT: return KEY_INSERT;
+    case VK_HOME: return KEY_HOME;
+    case VK_END: return KEY_END;
+    case VK_PRIOR: return KEY_PAGEUP;
+    case VK_NEXT: return KEY_PAGEDOWN;
+    // finish the rest of the mapping
+    }
     return KEY_NONE;
 }
 

@@ -9,7 +9,7 @@
 static void SetTint(Painter *painter)
 {
     PaintPropsData data = { .tint = { .r = painter->backColor.r, .g = painter->backColor.g, .b = painter->backColor.b, .a = painter->backColor.a } };
-    glNamedBufferSubData(painter->gldata.paintPropBuffer, 0, sizeof(PaintPropsData), &data);
+    glNamedBufferSubData(painter->gldata.paintPropBuffer, 0, sizeof data, &data);
 }
 
 NVAPI void PainterReset(Painter *painter)
@@ -124,6 +124,8 @@ NVAPI void PainterFillRect(Painter *painter, Rectangle rectangle)
 
 NVAPI void PainterDrawString(Painter *painter, Rectangle bounds, const char *string, size_t bytes, bool centerAlign)
 {
+    if(!string || bytes == 0) return;
+
     size_t startVertex = painter->vertIndex;
     Font *font = painter->font ? painter->font : painter->defaultFont;
     FontStyle style = painter->fontStyle;
@@ -185,6 +187,93 @@ NVAPI void PainterDrawString(Painter *painter, Rectangle bounds, const char *str
     glDrawArrays(GL_TRIANGLES, startVertex, 6 * bytes);
     glUseProgram(painter->gldata.shaderProgram);
     glDisable(GL_BLEND);
+}
+
+NVAPI void PainterDrawStringColored(Painter *painter, Rectangle bounds, const char *string, size_t bytes, bool centerAlign, TextColorData colorData[])
+{
+    if(!string || bytes == 0) return;
+
+    size_t startVertex = painter->vertIndex;
+    Font *font = painter->font ? painter->font : painter->defaultFont;
+    FontStyle style = painter->fontStyle;
+
+    const vec4s defaultColor = ColorToVec4(painter->backColor);
+
+    if(!font->hasStyles[style])
+    {
+        style = Regular;
+    }
+
+    float x = (float)bounds.l;
+    float y = (float)bounds.t;
+
+    RectangleF rect = FontMeasureStringRect(font, style, string, bytes, 0);
+    if(centerAlign)
+    {
+        x += round((bounds.r - bounds.l - rect.r - rect.l) / 2);
+        y += round((bounds.b - bounds.t - rect.b - rect.t) / 2);
+    }
+    else
+    {
+        y += FontGetBaseline(font, style);
+    }
+
+    size_t colorIndex = 0;
+    bool noMoreColor = colorData[colorIndex].end;
+    vec4s color = defaultColor;
+
+    for(size_t i = 0; i < bytes; ++i)
+    {
+        uint8_t ch = string[i];
+
+        if(!noMoreColor)
+        {
+            TextColorData data = colorData[colorIndex];
+            if(data.end) noMoreColor = true;
+            else if(i >= data.from)
+            {
+                color = data.reset ? defaultColor : ColorToVec4(data.color);
+                colorIndex++;
+            }
+        }
+
+        float u0, v0, u1, v1;
+        RectangleF posRect = FontGetQuad(font, style, ch, &x, &y, &u0, &v0, &u1, &v1);
+        const vec2s topLeft = { .x = posRect.l, .y = posRect.t };
+        const vec2s topRight = { .x = posRect.r, .y = posRect.t };
+        const vec2s bottomLeft = { .x = posRect.l, .y = posRect.b };
+        const vec2s bottomRight = { .x = posRect.r, .y = posRect.b };
+        const vec2s uvTopLeft = { .x = u0, .y = v0 };
+        const vec2s uvTopRight = { .x = u1, .y = v0 };
+        const vec2s uvBottomLeft = { .x = u0, .y = v1 };
+        const vec2s uvBottomRight = { .x = u1, .y = v1 };
+
+        painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = topLeft, .color = color, .texcoord = uvTopLeft };
+        painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = topRight, .color = color, .texcoord = uvTopRight };
+        painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = bottomLeft, .color = color, .texcoord = uvBottomLeft };
+
+        painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = topRight, .color = color, .texcoord = uvTopRight };
+        painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = bottomRight, .color = color, .texcoord = uvBottomRight };
+        painter->vertexMap[painter->vertIndex++] = (Vertex){ .position = bottomLeft, .color = color, .texcoord = uvBottomLeft };
+
+        if(i < bytes - 1)
+            x += FontKernAdvance(font, painter->fontStyle, ch, string[i+1]);
+    }
+
+    Color bC = painter->backColor;
+    painter->backColor = COLOR_WHITE;
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glUseProgram(painter->gldata.fontProgram);
+    glUniform1i(painter->gldata.textureLoc, 0);
+    SetTint(painter);
+    glBindTextureUnit(0, font->styles[style].texture);
+    glDrawArrays(GL_TRIANGLES, startVertex, 6 * bytes);
+    glUseProgram(painter->gldata.shaderProgram);
+    glDisable(GL_BLEND);
+
+    painter->backColor = bC;
 }
 
 NVAPI void PainterDrawCircle(Painter *painter, Rectangle rectangle)

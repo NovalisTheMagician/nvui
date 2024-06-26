@@ -6,6 +6,7 @@
 #include "nvui/widgets.h"
 
 #include <stdlib.h>
+#include <tgmath.h>
 
 #define BOX_SIZE 18
 #define BOX_MARGIN 4
@@ -36,6 +37,7 @@ static int CheckboxMessage(Element *element, Message message, int di, void *dp)
         Rectangle bounds = ElementGetBounds(element);
 
         bool pressed = element->window->pressed == element && element->window->hovered == element;
+        bool focused = element->window->focused == element;
 
         Rectangle boxBounds;
         boxBounds.l = bounds.l + BOX_MARGIN;
@@ -62,7 +64,7 @@ static int CheckboxMessage(Element *element, Message message, int di, void *dp)
         else if(state == Indeterminate)
             PainterFillRect(painter, checkBounds);
 
-        if(element->flags & CHECKBOX_BORDER)
+        if(element->flags & CHECKBOX_BORDER || focused)
         {
             Color borderColor = COLOR_BLACK;
             PainterSetColor(painter, borderColor);
@@ -70,13 +72,10 @@ static int CheckboxMessage(Element *element, Message message, int di, void *dp)
         }
 
         Rectangle borderBounds = boxBounds;
-        if(element->flags & CHECKBOX_BORDER)
-        {
-            borderBounds.l += 1;
-            borderBounds.t += 1;
-            borderBounds.r -= 1;
-            borderBounds.b -= 1;
-        }
+        borderBounds.l += 1;
+        borderBounds.t += 1;
+        borderBounds.r -= 1;
+        borderBounds.b -= 1;
         Color brighter = ColorFromGrayscale(0.9f);
         Color darker = ColorFromGrayscale(0.25f);
         PainterDrawRectLit(painter, borderBounds, brighter, darker);

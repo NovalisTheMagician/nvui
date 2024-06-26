@@ -1,5 +1,6 @@
 #include "nvui/private/widgets.h"
 
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <tgmath.h>
@@ -10,7 +11,20 @@
 #include "nvui/window.h"
 #include "nvui/keys.h"
 
-#define PADDING 3
+#define PADDING 2
+
+static void RemoveCharAt(Textfield *textfield, size_t at)
+{
+    memcpy(textfield->text + (at - 1), textfield->text + at, textfield->textBytes - at + 1);
+    textfield->textBytes--;
+}
+
+static void InsertCharAt(Textfield *textfield, size_t at, int codepoint)
+{
+    memcpy(textfield->text + at + 1, textfield->text + at, textfield->textBytes - at + 1);
+    textfield->text[at] = codepoint;
+    textfield->textBytes++;
+}
 
 static int TextfieldMessage(Element *element, Message message, int di, void *dp)
 {
@@ -22,9 +36,30 @@ static int TextfieldMessage(Element *element, Message message, int di, void *dp)
         bool focused = WindowGetFocused(element->window) == element;
 
         Color c = COLOR_WHITE;
+        Rectangle backgroundRect = bounds;
+        backgroundRect.l += 1;
+        backgroundRect.t += 1;
+        backgroundRect.r -= 1;
+        backgroundRect.b -= 1;
         ElementMessage(element, MSG_TEXTFIELD_GET_COLOR, focused, &c);
         PainterSetColor(painter, c);
-        PainterFillRect(painter, bounds);
+        PainterFillRect(painter, backgroundRect);
+
+        Rectangle raiseBounds = bounds;
+        raiseBounds.l += 1;
+        raiseBounds.t += 1;
+        raiseBounds.r -= 1;
+        raiseBounds.b -= 1;
+
+        Color brighter = ColorFromGrayscale(0.9f);
+        Color darker = ColorFromGrayscale(0.25f);
+        PainterDrawRectLit(painter, raiseBounds, brighter, darker);
+
+        if(element->flags & TEXTFIELD_BORDER || focused)
+        {
+            PainterSetColor(painter, COLOR_BLACK);
+            PainterDrawRect(painter, bounds);
+        }
 
         Color textColor = COLOR_BLACK;
         ElementMessage(element, MSG_TEXTFIELD_GET_TEXT_COLOR, focused, &textColor);
@@ -34,7 +69,29 @@ static int TextfieldMessage(Element *element, Message message, int di, void *dp)
         textBounds.t += PADDING;
         textBounds.r -= PADDING;
         textBounds.b -= PADDING;
-        PainterDrawString(painter, textBounds, textfield->text, textfield->textBytes, false);
+        if(textfield->selEnd - textfield->selStart == 0)
+            PainterDrawString(painter, textBounds, textfield->text, textfield->textBytes, false);
+        else
+        {
+            Font *font = WindowGetFontVariant(element->window, DefaultVariant);
+            float startOffset = FontMeasureString(font, DefaultStyle, textfield->text, textfield->selStart, 0);
+            float endOffset = FontMeasureString(font, DefaultStyle, textfield->text + textfield->selStart, textfield->selEnd - textfield->selStart, 0);
+
+            PainterSetColor(painter, COLOR_BLUE);
+            Rectangle selectRect = textBounds;
+            selectRect.l += startOffset;
+            selectRect.r = selectRect.l + (endOffset - startOffset);
+            PainterFillRect(painter, selectRect);
+
+            TextColorData colorData[] =
+            {
+                (TextColorData){ .from = textfield->selStart, .color = COLOR_WHITE },
+                (TextColorData){ .from = textfield->selEnd, .reset = true },
+                TextColorDataEnd
+            };
+            PainterSetColor(painter, textColor);
+            PainterDrawStringColored(painter, textBounds, textfield->text, textfield->textBytes, false, colorData);
+        }
 
         if(focused)
         {
@@ -42,11 +99,7 @@ static int TextfieldMessage(Element *element, Message message, int di, void *dp)
             float w = FontMeasureString(font, DefaultStyle, textfield->text, textfield->cursorPos, 0);
             float offset = round(w);
             PainterDrawLine(painter, textBounds.l + offset, textBounds.t, textBounds.l + offset, textBounds.b);
-        }
-
-        Color brighter = ColorFromGrayscale(0.9f); // ColorMultiply(baseColor, 2);
-        Color darker = ColorFromGrayscale(0.25f); // ColorMultiply(baseColor, 0.5f);
-        PainterDrawRectLit(painter, bounds, brighter, darker);
+        }        
     }
     else if(message == MSG_DESTROY)
     {
@@ -85,9 +138,8 @@ static int TextfieldMessage(Element *element, Message message, int di, void *dp)
             }
             else
             {
-                memcpy(textfield->text + (textfield->cursorPos - 1), textfield->text + textfield->cursorPos, textfield->textBytes - textfield->cursorPos + 1);
+                RemoveCharAt(textfield, textfield->cursorPos);
                 textfield->cursorPos--;
-                textfield->textBytes--;
             }
         }
         else if(di >= ' ' && di <= 0x7f && textfield->textBytes < textfield->maxTextBytes)
@@ -99,9 +151,8 @@ static int TextfieldMessage(Element *element, Message message, int di, void *dp)
             }
             else
             {
-                memcpy(textfield->text + textfield->cursorPos + 1, textfield->text + textfield->cursorPos, textfield->textBytes - textfield->cursorPos + 1);
-                textfield->text[textfield->cursorPos++] = di;
-                textfield->textBytes++;
+                InsertCharAt(textfield, textfield->cursorPos, di);
+                textfield->cursorPos++;
             }
         }
         else
@@ -114,21 +165,59 @@ static int TextfieldMessage(Element *element, Message message, int di, void *dp)
     }
     else if(message == MSG_KEY_DOWN)
     {
+        if(di == KEY_LSHIFT || di == KEY_RSHIFT)
+            textfield->shiftDown = true;
+
         if(di == KEY_LEFT && textfield->cursorPos > 0)
         {
             textfield->cursorPos--;
+            if(textfield->shiftDown)
+            {
+                if(textfield->cursorPos > textfield->selEnd)
+                    textfield->selEnd = textfield->cursorPos;
+                else
+                    textfield->selStart = textfield->cursorPos;
+            }
+            else
+                textfield->selEnd = textfield->selStart = textfield->cursorPos;
         }
         else if(di == KEY_RIGHT && textfield->cursorPos < textfield->textBytes)
         {
             textfield->cursorPos++;
-            if(textfield->cursorPos > textfield->textBytes)
-                textfield->cursorPos = textfield->textBytes;
+            if(textfield->shiftDown)
+            {
+                if(textfield->cursorPos < textfield->selStart)
+                    textfield->selStart = textfield->cursorPos;
+                else
+                    textfield->selEnd = textfield->cursorPos;
+            }
+            else
+                textfield->selEnd = textfield->selStart = textfield->cursorPos;
+        }
+        else if(di == KEY_HOME && textfield->cursorPos > 0)
+        {
+            textfield->cursorPos = 0;
+            textfield->selEnd = textfield->selStart = textfield->cursorPos;
+        }
+        else if(di == KEY_END && textfield->cursorPos < textfield->textBytes)
+        {
+            textfield->cursorPos = textfield->textBytes;
+            textfield->selEnd = textfield->selStart = textfield->cursorPos;
+        }
+        else if(di == KEY_DELETE && textfield->cursorPos < textfield->textBytes)
+        {
+            RemoveCharAt(textfield, textfield->cursorPos + 1);
         }
         else
         {
             return 0;
         }
         ElementRepaint(element, NULL);
+    }
+    else if(message == MSG_KEY_UP)
+    {
+        if(di == KEY_LSHIFT || di == KEY_RSHIFT)
+            textfield->shiftDown = false;
     }
     return 0;
 }

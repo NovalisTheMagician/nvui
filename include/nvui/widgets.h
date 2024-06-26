@@ -10,6 +10,7 @@
 typedef struct Button Button;
 
 NVAPI Button* ButtonCreate(Element *parent, uint32_t flags, const char *text, ssize_t textBytes);
+NVAPI void ButtonSetText(Button *button, const char *text, ssize_t textBytes);
 
 #define LABEL_CENTER (1 << 0)
 typedef struct Label Label;

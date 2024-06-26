@@ -41,4 +41,6 @@ typedef struct Textfield
     size_t maxTextBytes, textBytes;
     size_t cursorPos;
     size_t selStart, selEnd;
+
+    bool shiftDown;
 } Textfield;

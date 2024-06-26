@@ -2,6 +2,8 @@
 
 #include "nvui.h"
 
+#include <cglm/struct.h>
+
 typedef struct Color
 {
     float r;
@@ -19,6 +21,8 @@ NVAPI Color ColorFromGrayscale(float scale);
 NVAPI Color ColorFromGrayscaleAlpha(float scale, float alpha);
 
 NVAPI Color ColorMultiply(Color color, float v);
+
+NVAPI vec4s ColorToVec4(Color color);
 
 #define COLOR_BLACK (Color){ 0, 0, 0, 1 }
 #define COLOR_WHITE (Color){ 1, 1, 1, 1 }

@@ -19,6 +19,16 @@ typedef enum FillStyle
     FILL_HATCH,
 } FillStyle;
 
+typedef struct TextColorData
+{
+    size_t from;
+    bool reset;
+    Color color;
+    bool end;
+} TextColorData;
+
+#define TextColorDataEnd (TextColorData){ .end = true }
+
 typedef struct Painter Painter;
 
 NVAPI void PainterReset(Painter *painter);
@@ -38,7 +48,10 @@ NVAPI void PainterDrawRect(Painter *painter, Rectangle rectangle);
 NVAPI void PainterDrawRectLit(Painter *painter, Rectangle rectangle, Color brighter, Color darker);
 NVAPI void PainterDrawCircle(Painter *painter, Rectangle rectangle);
 NVAPI void PainterDrawEllipse(Painter *painter, Rectangle rectangle);
+
 NVAPI void PainterDrawString(Painter *painter, Rectangle bounds, const char *string, size_t bytes, bool centerAlign);
+NVAPI void PainterDrawStringColored(Painter *painter, Rectangle bounds, const char *string, size_t bytes, bool centerAlign, TextColorData colorData[]);
+NVAPI void PainterDrawStringColorFormat(Painter *painter, Rectangle bounds, const char *string, size_t bytes, bool centerAlign);
 
 NVAPI void PainterFillRect(Painter *painter, Rectangle rectangle);
 NVAPI void PainterFillCircle(Painter *painter, Rectangle rectangle);
