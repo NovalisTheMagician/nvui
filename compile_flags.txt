@@ -5,3 +5,4 @@
 -IE:\DevLibs\Include
 -DNVEXPORT
 -D_DEBUG
+-DUNICODE

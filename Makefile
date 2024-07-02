@@ -59,7 +59,8 @@ ifeq ($(PLATFORM),WINDOWS)
     APPLICATION := $(APPLICATION).exe
     LIB_DIRS += $(LIB_GCC_PATH)
     INC_DIRS += $(INC_PATH)
-    LDFLAGS += -mwindows 
+    LDFLAGS += -mwindows
+    DEFINES += UNICODE
     TESTFLAGS += -mconsole -I$(INC_PATH)
 else 
     LIBRARY_NAME := lib$(LIBRARY).so

@@ -95,6 +95,8 @@ static int TextfieldMessage(Element *element, Message message, int di, void *dp)
 
         if(focused)
         {
+            Color cursorColor = textfield->cursorPos > textfield->selStart && textfield->cursorPos < textfield->selEnd ? COLOR_WHITE : COLOR_BLACK;
+            PainterSetColor(painter, cursorColor);
             Font *font = WindowGetFontVariant(element->window, DefaultVariant);
             float w = FontMeasureString(font, DefaultStyle, textfield->text, textfield->cursorPos, 0);
             float offset = round(w);

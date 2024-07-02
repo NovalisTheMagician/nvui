@@ -297,7 +297,7 @@ static void WindowKeyEvent(Window *window, Message message, int di, void *dp)
 
 static void WindowCharEvent(Window *window, Message message, int di, void *dp)
 {
-    //printf("%c %d\n", di, di);
+    printf("%c %d (0x%X)\n", di, di, di);
     if(window->focused)
     {
         di = di == '\r' ? '\n' : di;
@@ -493,7 +493,7 @@ NVAPI Element* WindowGetFocused(Window *window)
 }
 
 #ifdef _WIN32
-#define WINDOW_CLASS "NVWINDOW"
+#define WINDOW_CLASS L"NVWINDOW"
 
 static bool LoadPreGLFunctions(void)
 {
@@ -616,9 +616,9 @@ void InvalidateWindow(Window *window)
 
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    Window *window = (Window*)GetWindowLongPtrA(hwnd, GWLP_USERDATA);
+    Window *window = (Window*)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
 
-    if(!window) return DefWindowProcA(hwnd, message, wParam, lParam);
+    if(!window) return DefWindowProcW(hwnd, message, wParam, lParam);
 
     switch(message)
     {
@@ -750,25 +750,22 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
         }
         break;
     case WM_KEYDOWN:
-        {
-            int key = TranslateKey(wParam);
-            WindowKeyEvent(window, MSG_KEY_DOWN, key, NULL);
-        }
-        break;
     case WM_KEYUP:
         {
             int key = TranslateKey(wParam);
-            WindowKeyEvent(window, MSG_KEY_UP, key, NULL);
+            WindowKeyEvent(window, message == WM_KEYDOWN ? MSG_KEY_DOWN : MSG_KEY_UP, key, NULL);
         }
         break;
     case WM_CHAR:
         {
-            WindowCharEvent(window, MSG_CHAR, wParam, NULL);
+            char32_t ch = 0;
+            WideCharToMultiByte(CP_UTF8, 0, (wchar_t*)&wParam, 1, (char*)&ch, sizeof ch, NULL, NULL);
+            WindowCharEvent(window, MSG_CHAR, ch, NULL);
         }
         break;
     case WM_UNICHAR:
         {
-            
+            if(wParam == UNICODE_NOCHAR) return 1;
         }
         break;
     case WM_PAINT:
@@ -800,7 +797,7 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
             mmi->ptMinTrackSize.y = windowRect.bottom - windowRect.top;
         }
     default:
-        return DefWindowProcA(hwnd, message, wParam, lParam);
+        return DefWindowProcW(hwnd, message, wParam, lParam);
     }
 
     return 0;
@@ -810,17 +807,17 @@ NVAPI void Initialize(void)
 {
     LoadPreGLFunctions();
 
-    WNDCLASSEXA windowClass = 
+    WNDCLASSEXW windowClass = 
     {
         .cbSize = sizeof windowClass,
         .lpfnWndProc = WndProc,
-        .hCursor = LoadCursorA(NULL, IDC_ARROW),
-        .hIcon = LoadIconA(NULL, IDI_APPLICATION),
-        .hInstance = GetModuleHandleA(NULL),
+        .hCursor = LoadCursorW(NULL, IDC_ARROW),
+        .hIcon = LoadIconW(NULL, IDI_APPLICATION),
+        .hInstance = GetModuleHandleW(NULL),
         .style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW,
         .lpszClassName = WINDOW_CLASS
     };
-    RegisterClassExA(&windowClass);
+    RegisterClassExW(&windowClass);
 }
 
 NVAPI Window* WindowCreate(const char *title, int width, int height)
@@ -840,9 +837,14 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
     RECT windowRect = { .right = width, .bottom = height };
     AdjustWindowRectEx(&windowRect, WS_OVERLAPPEDWINDOW, false, WS_EX_OVERLAPPEDWINDOW);
 
-    window->hwnd = CreateWindowExA(WS_EX_OVERLAPPEDWINDOW, WINDOW_CLASS, title, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, windowRect.right - windowRect.left, windowRect.bottom - windowRect.top, NULL, NULL, GetModuleHandleA(NULL), NULL);
+    size_t wideTitleSize = MultiByteToWideChar(CP_UTF8, 0, title, -1, NULL, 0);
+    wchar_t *wideTitle = calloc(wideTitleSize, sizeof *wideTitle);
+    MultiByteToWideChar(CP_UTF8, 0, title, -1, wideTitle, wideTitleSize);
+
+    window->hwnd = CreateWindowExW(WS_EX_OVERLAPPEDWINDOW, WINDOW_CLASS, wideTitle, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, windowRect.right - windowRect.left, windowRect.bottom - windowRect.top, NULL, NULL, GetModuleHandleW(NULL), NULL);
+    free(wideTitle);
     if(!window->hwnd) return NULL;
-    SetWindowLongPtrA(window->hwnd, GWLP_USERDATA, (LONG_PTR)window);
+    SetWindowLongPtrW(window->hwnd, GWLP_USERDATA, (LONG_PTR)window);
 
     window->hdc = GetDC(window->hwnd);
     if(!window->hdc) return NULL;
@@ -901,7 +903,7 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
         return NULL;
 
     ShowWindow(window->hwnd, SW_SHOW);
-    PostMessageA(window->hwnd, WM_SIZE, 0, 0);
+    PostMessageW(window->hwnd, WM_SIZE, 0, 0);
 
     return window;
 }
@@ -910,10 +912,10 @@ NVAPI int MessageLoop(void)
 {
     MSG message = {};
 
-    while(GetMessageA(&message, NULL, 0, 0))
+    while(GetMessageW(&message, NULL, 0, 0))
     {
         TranslateMessage(&message);
-        DispatchMessageA(&message);
+        DispatchMessageW(&message);
     }
 
     free(global.windows);
