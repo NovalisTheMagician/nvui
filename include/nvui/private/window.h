@@ -77,5 +77,6 @@ typedef struct Window
     XVisualInfo *visual;
     Colormap colormap;
     bool firstTimeLayout;
+    XIC inputContext;
 #endif
 } Window;

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <uchar.h>
 
 #include "nvui/element.h"
 #include "nvui/private/window.h"
@@ -24,6 +25,8 @@ typedef struct GlobalState
 #ifdef __linux__
     Display *display;
     Atom windowClosedID;
+    XIM inputMethod;
+    XIMStyle bestStyle;
 #endif
 } GlobalState;
 
@@ -966,6 +969,22 @@ NVAPI void Initialize(void)
 {
     global.display = XOpenDisplay(NULL);
     global.windowClosedID = XInternAtom(global.display, "WM_DELETE_WINDOW", 0);
+
+    global.inputMethod = XOpenIM(global.display, NULL, NULL, NULL);
+    
+    XIMStyles *styles = NULL;
+    XGetIMValues(global.inputMethod, XNQueryInputStyle, &styles, NULL);
+
+    for(int i = 0; i < styles->count_styles; ++i)
+    {
+        XIMStyle thisStyle = styles->supported_styles[i];
+        if(thisStyle == (XIMPreeditNothing | XIMStatusNothing))
+        {
+            global.bestStyle = thisStyle;
+            break;
+        }
+    }
+    XFree(styles);
 }
 
 NVAPI Window* WindowCreate(const char *title, int width, int height)
@@ -1027,6 +1046,9 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
 
     window->window = XCreateWindow(global.display, DefaultRootWindow(global.display), 0, 0, width, height, 0, window->visual->depth, InputOutput, window->visual->visual, CWBackingPixel | CWColormap | CWBorderPixel | CWEventMask, &windowAttrib);
     XStoreName(global.display, window->window, title);
+
+    window->inputContext = XCreateIC(global.inputMethod, XNInputStyle, global.bestStyle, XNClientWindow, window->window, XNFocusWindow, window->window, NULL);
+
     XSelectInput(global.display, window->window, SubstructureNotifyMask | ExposureMask | PointerMotionMask | ButtonPressMask | ButtonReleaseMask | KeyPressMask | KeyReleaseMask | StructureNotifyMask | EnterWindowMask | LeaveWindowMask | ButtonMotionMask | KeymapStateMask | FocusChangeMask | PropertyChangeMask);
 
     XSetWMProtocols(global.display, window->window, &global.windowClosedID, 1);
@@ -1094,10 +1116,11 @@ static void CloseWindow(Window *window)
 
 static Keycode TranslateKey(unsigned int xkey)
 {
-    if(xkey == XKeysymToKeycode(global.display, XK_Left))
-        return KEY_LEFT;
-    else if(xkey == XKeysymToKeycode(global.display, XK_Right))
-        return KEY_RIGHT;
+    switch(xkey)
+    {
+    case XK_Left: return KEY_LEFT;
+    case XK_Right: return KEY_RIGHT;
+    }
     return KEY_NONE;
 }
 
@@ -1113,6 +1136,7 @@ static void CloseWindow(Window *window)
     
     XFree(window->visual);
     XFreeColormap(global.display, window->colormap);
+    XDestroyIC(window->inputContext);
     XDestroyWindow(global.display, window->window);
 }
 
@@ -1216,14 +1240,32 @@ NVAPI int MessageLoop(void)
                 Window *window = FindWindow(event.xkey.window);
                 if(!window) continue;
 
-                Keycode key = TranslateKey(event.xkey.keycode);
-                WindowKeyEvent(window, event.type == KeyPress ? MSG_KEY_DOWN : MSG_KEY_UP, key, NULL);
+                char32_t symbol = 0;
+                Status status = 0;
+                KeySym keySym = NoSymbol;
+                Xutf8LookupString(window->inputContext, (XKeyEvent*)&event, (char*)&symbol, sizeof symbol, &keySym, &status);
 
-                if(event.type == KeyPress)
+                if(status == XLookupChars && event.type == KeyPress)
                 {
-                    char buffer[16] = {};
-                    XLookupString(&event.xkey, buffer, sizeof buffer, NULL, NULL);
-                    WindowCharEvent(window, MSG_CHAR, buffer[0], NULL);
+                    WindowCharEvent(window, MSG_CHAR, symbol, NULL);
+                }
+                else if(status == XLookupKeySym)
+                {
+                    Keycode key = TranslateKey(keySym);
+                    WindowKeyEvent(window, event.type == KeyPress ? MSG_KEY_DOWN : MSG_KEY_UP, key, NULL);
+                }
+                else if(status == XLookupBoth)
+                {
+                    Keycode key = TranslateKey(keySym);
+                    WindowKeyEvent(window, event.type == KeyPress ? MSG_KEY_DOWN : MSG_KEY_UP, key, NULL);
+                    if(event.type == KeyPress)
+                    {
+                        WindowCharEvent(window, MSG_CHAR, symbol, NULL);
+                    }
+                }
+                else if(status == XBufferOverflow)
+                {
+                    // eh?
                 }
             }
             break;
@@ -1264,6 +1306,7 @@ NVAPI int MessageLoop(void)
 
     free(global.windows);
 
+    XCloseIM(global.inputMethod);
     XCloseDisplay(global.display);
     return 0;
 }
