@@ -6,7 +6,6 @@
 #include "../window.h"
 
 #include <cglm/struct.h>
-#include <windef.h>
 
 #ifdef _WIN32
 #define Rectangle W32Rectangle
@@ -18,6 +17,7 @@
 #elif defined(__linux__)
 #define Window X11Window
 #define Font X11Font
+#define CursorShape X11CursorShape
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
@@ -26,6 +26,7 @@
 #include "glad/glx.h"
 #undef Font
 #undef Window
+#undef CursorShape
 #endif
 
 typedef struct GLData

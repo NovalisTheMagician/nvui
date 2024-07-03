@@ -860,7 +860,7 @@ NVAPI void Initialize(void)
     };
     RegisterClassExW(&windowClass);
 
-    LPWSTR cursorNames[] = { IDC_ARROW, IDC_IBEAM, IDC_SIZEWE, IDC_SIZENS, IDC_CROSS, IDC_APPSTARTING, IDC_WAIT, IDC_CROSS };
+    LPWSTR cursorNames[] = { IDC_ARROW, IDC_IBEAM, IDC_SIZEWE, IDC_SIZENS, IDC_APPSTARTING, IDC_WAIT, IDC_CROSS };
     for(size_t i = 0; i < NumCursors; ++i)
     {
         global.cursors[i] = LoadCursorW(NULL, cursorNames[i]);
@@ -1035,6 +1035,17 @@ NVAPI void Initialize(void)
         }
     }
     XFree(styles);
+
+    char *cursorNames[] = { "left_ptr", "xterm", "sb_h_double_arrow", "sb_v_double_arrow", "left_ptr_watch", "wait", "crosshair" };
+    for(size_t i = 0; i < NumCursors; ++i)
+    {
+        global.cursors[i] = XcursorLibraryLoadCursor(global.display, cursorNames[i]);
+    }
+}
+
+NVAPI void WindowSetCursor(Window *window, CursorShape cursor)
+{
+    XDefineCursor(global.display, window->window, global.cursors[cursor]);
 }
 
 NVAPI Window* WindowCreate(const char *title, int width, int height)
@@ -1141,28 +1152,6 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
 
     return window;
 }
-
-#if 0
-static void CloseWindow(Window *window)
-{
-    long mask = SubstructureRedirectMask | SubstructureNotifyMask;
-
-    event.xclient.type = ClientMessage;
-    event.xclient.serial = 0;
-    event.xclient.send_event = True;
-    event.xclient.message_type = global.windowClosedID;
-    event.xclient.window = window->window;
-    event.xclient.format = 32;
-    event.xclient.data.l[0] = 0;
-    event.xclient.data.l[1] = 0;
-    event.xclient.data.l[2] = 0;
-    event.xclient.data.l[3] = 0;
-    event.xclient.data.l[4] = 0;
-
-    XSendEvent(global.display, DefaultRootWindow(global.display), False, mask, &event);
-    XSync(global.display, False);
-}
-#endif
 
 static Keycode TranslateKey(unsigned int xkey)
 {
