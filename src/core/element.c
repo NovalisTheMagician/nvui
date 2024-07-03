@@ -115,6 +115,13 @@ NVAPI Element* ElementFindByPoint(Element *element, int x, int y)
     return element;
 }
 
+NVAPI void ElementGetCursorPos(Element *element, int *x, int *y)
+{
+    WindowGetCursorPos(element->window, x, y);
+    *x -= element->bounds.l;
+    *y -= element->bounds.t;
+}
+
 NVAPI void ElementSetUserHandler(Element *element, MessageHandler userClass)
 {
     element->messageUser = userClass;

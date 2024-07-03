@@ -21,8 +21,10 @@ typedef struct GlobalState
     Window **windows;
     size_t windowCount;
     Window *mainWindow;
-
-#ifdef __linux__
+#ifdef WIN32
+    HCURSOR cursors[NumCursors];
+#elif defined(__linux__)
+    Cursor cursors[NumCursors];
     Display *display;
     Atom windowClosedID;
     XIM inputMethod;
@@ -191,17 +193,33 @@ static int WindowMessage(Element *element, Message message, int di, void *dp)
 
 void InvalidateWindow(Window *window);
 
+static void WindowSetFocus(Window *window, Element *element)
+{
+    Element *previous = window->focused;
+    window->focused = element;
+
+    if(previous && previous != element)
+    {
+        ElementMessage(previous, MSG_UPDATE, UPDATE_FOCUS_LOSE, NULL);
+    }
+
+    if(element && previous != element)
+    {
+        ElementMessage(element, MSG_UPDATE, UPDATE_FOCUS_GAIN, NULL);
+    }
+}
+
 static void WindowSetPressed(Window *window, Element *element, int button)
 {
     Element *previous = window->pressed;
 
     window->pressed = element;
     window->pressedButton = button;
-    if(element)
-        window->focused = element;
 
-    if(previous) ElementMessage(previous, MSG_UPDATE, UPDATE_PRESSED, NULL);
-    if(element) ElementMessage(element, MSG_UPDATE, UPDATE_PRESSED, NULL);
+    if(element) WindowSetFocus(window, element);
+
+    if(previous) ElementMessage(previous, MSG_UPDATE, UPDATE_CLICK_RELEASE, NULL);
+    if(element) ElementMessage(element, MSG_UPDATE, UPDATE_CLICK_PRESS, NULL);
 }
 
 static void WindowInputEvent(Window *window, Message message, int di, void *dp)
@@ -241,12 +259,12 @@ static void WindowInputEvent(Window *window, Message message, int di, void *dp)
         if(inside && window->hovered == &window->e)
         {
             window->hovered = window->pressed;
-            ElementMessage(window->pressed, MSG_UPDATE, UPDATE_HOVERED, NULL);
+            ElementMessage(window->pressed, MSG_UPDATE, UPDATE_HOVER_ENTER, NULL);
         }
         else if(!inside && window->hovered == window->pressed)
         {
             window->hovered = &window->e;
-            ElementMessage(window->pressed, MSG_UPDATE, UPDATE_HOVERED, NULL);
+            ElementMessage(window->pressed, MSG_UPDATE, UPDATE_HOVER_LEAVE, NULL);
         }
     }
     else
@@ -279,8 +297,8 @@ static void WindowInputEvent(Window *window, Message message, int di, void *dp)
         {
             Element *previous = window->hovered;
             window->hovered = hovered;
-            ElementMessage(previous, MSG_UPDATE, UPDATE_HOVERED, NULL);
-            ElementMessage(window->hovered, MSG_UPDATE, UPDATE_HOVERED, NULL);
+            ElementMessage(previous, MSG_UPDATE, UPDATE_HOVER_LEAVE, NULL);
+            ElementMessage(window->hovered, MSG_UPDATE, UPDATE_HOVER_ENTER, NULL);
         }
     }
 
@@ -492,6 +510,17 @@ NVAPI Element* WindowGetFocused(Window *window)
     return window->focused;
 }
 
+NVAPI void WindowSetFocused(Window *window, Element *element)
+{
+    WindowSetFocus(window, element);
+}
+
+NVAPI void WindowGetCursorPos(Window *window, int *x, int *y)
+{
+    *x = window->cursorX;
+    *y = window->cursorY;
+}
+
 #ifdef _WIN32
 #define WINDOW_CLASS L"NVWINDOW"
 
@@ -612,6 +641,12 @@ static Keycode TranslateKey(WPARAM wParam)
 void InvalidateWindow(Window *window)
 {
     InvalidateRect(window->hwnd, NULL, false);
+}
+
+NVAPI void WindowSetCursor(Window *window, CursorShape cursor)
+{
+    window->currentCursor = global.cursors[cursor];
+    PostMessageW(window->hwnd, WM_SETCURSOR, 0, 0);
 }
 
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -796,6 +831,12 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
             mmi->ptMinTrackSize.x = windowRect.right - windowRect.left;
             mmi->ptMinTrackSize.y = windowRect.bottom - windowRect.top;
         }
+        break;
+    case WM_SETCURSOR:
+        {
+            SetCursor(window->currentCursor);
+        }
+        break;
     default:
         return DefWindowProcW(hwnd, message, wParam, lParam);
     }
@@ -818,6 +859,12 @@ NVAPI void Initialize(void)
         .lpszClassName = WINDOW_CLASS
     };
     RegisterClassExW(&windowClass);
+
+    LPWSTR cursorNames[] = { IDC_ARROW, IDC_IBEAM, IDC_SIZEWE, IDC_SIZENS, IDC_CROSS, IDC_APPSTARTING, IDC_WAIT, IDC_CROSS };
+    for(size_t i = 0; i < NumCursors; ++i)
+    {
+        global.cursors[i] = LoadCursorW(NULL, cursorNames[i]);
+    }
 }
 
 NVAPI Window* WindowCreate(const char *title, int width, int height)
@@ -825,6 +872,7 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
     Window *window = (Window*)ElementCreate(sizeof *window, NULL, 0, WindowMessage);
     if(!window) return NULL;
 
+    window->currentCursor = global.cursors[Arrow];
     window->e.window = window;
     window->hovered = &window->e;
 

@@ -6,6 +6,7 @@
 #include "../window.h"
 
 #include <cglm/struct.h>
+#include <windef.h>
 
 #ifdef _WIN32
 #define Rectangle W32Rectangle
@@ -21,6 +22,7 @@
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
 #include <X11/cursorfont.h>
+#include <X11/Xcursor/Xcursor.h>
 #include "glad/glx.h"
 #undef Font
 #undef Window
@@ -66,6 +68,8 @@ typedef struct Window
     Font fonts[NumVariants];
 
 #ifdef _WIN32
+    HCURSOR currentCursor;
+
     HWND hwnd;
     HGLRC hglrc;
     HDC hdc;

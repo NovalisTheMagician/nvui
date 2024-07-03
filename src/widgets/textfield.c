@@ -109,11 +109,27 @@ static int TextfieldMessage(Element *element, Message message, int di, void *dp)
     }
     else if(message == MSG_UPDATE)
     {
-        if(WindowGetFocused(element->window) == element) // gained focus
+        if(di == UPDATE_HOVER_ENTER)
+        {
+            WindowSetCursor(element->window, Bar);
+        }
+        else if(di == UPDATE_HOVER_LEAVE)
+        {
+            WindowSetCursor(element->window, Arrow);
+        }
+        else if(di == UPDATE_FOCUS_GAIN)
         {
             textfield->cursorPos = textfield->textBytes;
         }
+
         ElementRepaint(element, NULL);
+    }
+    else if(message == MSG_CLICKED)
+    {
+        int x, y;
+        ElementGetCursorPos(element, &x, &y);
+
+        printf("X: %d | Y: %d\n", x, y);
     }
     else if(message == MSG_GET_WIDTH)
     {

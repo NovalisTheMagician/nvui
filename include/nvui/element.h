@@ -11,8 +11,12 @@ typedef struct Element Element;
 
 #define E_OF(e) (Element*)(e)
 
-#define UPDATE_HOVERED (1)
-#define UPDATE_PRESSED (2)
+#define UPDATE_HOVER_ENTER (1)
+#define UPDATE_HOVER_LEAVE (2)
+#define UPDATE_CLICK_PRESS (3)
+#define UPDATE_CLICK_RELEASE (4)
+#define UPDATE_FOCUS_GAIN (5)
+#define UPDATE_FOCUS_LOSE (6)
 
 #define ELEMENT_DESTROY (1 << 30)
 #define ELEMENT_DESTROY_DESCENDENT (1 << 31)
@@ -36,7 +40,6 @@ typedef enum Message
 
     MSG_KEY_DOWN,
     MSG_KEY_UP,
-    MSG_KEY_HELD,
 
     MSG_CHAR,
 
@@ -75,6 +78,8 @@ NVAPI int ElementMessage(Element *element, Message message, int di, void *dp);
 NVAPI void ElementMove(Element *element, Rectangle bounds, bool alwaysLayout);
 NVAPI void ElementRepaint(Element *element, Rectangle *region);
 NVAPI Element* ElementFindByPoint(Element *element, int x, int y);
+
+NVAPI void ElementGetCursorPos(Element *element, int *x, int *y);
 
 NVAPI void ElementSetUserHandler(Element *element, MessageHandler userClass);
 NVAPI void ElementSetContext(Element *element, void *context);
