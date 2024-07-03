@@ -798,11 +798,6 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
             WindowCharEvent(window, MSG_CHAR, ch, NULL);
         }
         break;
-    case WM_UNICHAR:
-        {
-            if(wParam == UNICODE_NOCHAR) return 1;
-        }
-        break;
     case WM_PAINT:
         {
             PAINTSTRUCT paint;
@@ -823,6 +818,17 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
             EndPaint(hwnd, &paint);
         }
         break;
+    case WM_SETCURSOR:
+        {
+            if(window->currentCursor != global.cursors[Arrow])
+            {
+                SetCursor(window->currentCursor);
+                return 1;
+            }
+            else
+                return DefWindowProcW(hwnd, message, wParam, lParam);
+        }
+        break;
     case WM_GETMINMAXINFO:
         {
             RECT windowRect = { .right = WINDOW_MIN_WIDTH, .bottom = WINDOW_MIN_HEIGHT };
@@ -830,11 +836,6 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
             MINMAXINFO *mmi = (MINMAXINFO*)lParam;
             mmi->ptMinTrackSize.x = windowRect.right - windowRect.left;
             mmi->ptMinTrackSize.y = windowRect.bottom - windowRect.top;
-        }
-        break;
-    case WM_SETCURSOR:
-        {
-            SetCursor(window->currentCursor);
         }
         break;
     default:
