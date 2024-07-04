@@ -67,7 +67,7 @@ else
     LDFLAGS += -fvisibility=hidden
     UNAME_S := $(shell uname -s)
     ifeq ($(PLATFORM),LINUX)
-        LIBS += GL Xcursor
+        LIBS += GL Xcursor X11
         DEFINES += 
     endif
 endif
