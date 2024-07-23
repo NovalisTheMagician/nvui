@@ -37,3 +37,5 @@ NVAPI float FontGetLinegap(Font *font, FontStyle style);
 
 NVAPI float FontGetHeight(Font *font, FontStyle style);
 NVAPI float FontGetLineOffset(Font *font, FontStyle style);
+
+NVAPI size_t FontGetCodepointIndexForOffset(Font *font, FontStyle style, const char *string, size_t bytes, float offset);

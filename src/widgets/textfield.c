@@ -129,7 +129,13 @@ static int TextfieldMessage(Element *element, Message message, int di, void *dp)
         int x, y;
         ElementGetCursorPos(element, &x, &y);
 
-        printf("X: %d | Y: %d\n", x, y);
+        Font *font = WindowGetFontVariant(element->window, DefaultVariant);
+
+        // make it text relative
+        x -= PADDING;
+        size_t offsetIdx = FontGetCodepointIndexForOffset(font, DefaultStyle, textfield->text, textfield->textBytes, x);
+        
+        textfield->cursorPos = offsetIdx;
     }
     else if(message == MSG_GET_WIDTH)
     {

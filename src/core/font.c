@@ -178,3 +178,30 @@ NVAPI float FontGetLineOffset(Font *font, FontStyle style)
 {
     return font->styles[style].ascender - font->styles[style].descender + font->styles[style].linegap;
 }
+
+NVAPI size_t FontGetCodepointIndexForOffset(Font *font, FontStyle style, const char *string, size_t bytes, float offset)
+{
+    if(offset <= 0)
+        return 0;
+
+    FontStyleData *data = &font->styles[style];
+
+    float w = 0;
+    for(size_t i = 0; i < bytes; ++i)
+    {
+        uint32_t codepoint = string[i];
+        if(codepoint < 32 || codepoint > 127)
+            codepoint = '?';
+
+        int advancewidth, leftsidebearing;
+        stbtt_GetCodepointHMetrics(&data->fontinfo, codepoint, &advancewidth, &leftsidebearing);
+        float glyphWidth = advancewidth * data->scale;
+        w += glyphWidth;
+        if(i < bytes-1)
+            w += FontKernAdvance(font, style, codepoint, string[i+1]);
+
+        if(offset <= w - glyphWidth / 2)
+            return i;
+    }
+    return bytes;
+}

@@ -23,7 +23,7 @@
 #include <X11/Xatom.h>
 #include <X11/cursorfont.h>
 #include <X11/Xcursor/Xcursor.h>
-#include "glad/glx.h"
+#include "../../glad/glx.h"
 #undef Font
 #undef Window
 #undef CursorShape
