@@ -46,6 +46,18 @@ int ButtonMessage(Element *element, Message message, int di, void *dp)
 	return 0;
 }
 
+Textfield *tf;
+
+int ButtonMessage2(Element *element, Message message, int di, void *dp)
+{
+	if(message == MSG_CLICKED)
+	{
+		TextfieldSetSelection(tf, 4, -1);
+		WindowSetFocused(ElementGetWindow(element), E_OF(tf));
+	}
+	return 0;
+}
+
 int TextfieldMessage(Element *element, Message message, int di, void *dp)
 {
 	Textfield *textfield = (Textfield*)element;
@@ -154,8 +166,9 @@ int main()
 	FlowPanelSetBorder(row2, (Rectangle){ 10, 10, 10, 10 });
 
 	ButtonCreate(E_OF(row2), BUTTON_BORDER, "Button 4 in row", -1);
-	ButtonCreate(E_OF(row2), ELEMENT_H_FILL | BUTTON_BORDER, "Button 5 in row", -1);
-	Button *button = ButtonCreate(E_OF(row2), BUTTON_BORDER, "Button 6 in row", -1);
+	Button *button = ButtonCreate(E_OF(row2), ELEMENT_H_FILL | BUTTON_BORDER, "Button 5 in row", -1);
+	ElementSetUserHandler(E_OF(button), ButtonMessage2);
+	button = ButtonCreate(E_OF(row2), BUTTON_BORDER, "Button 6 in row", -1);
 	ElementSetUserHandler(E_OF(button), ButtonMessage);
 
 	FlowPanel *row3 = FlowPanelCreate(E_OF(column1), PANEL_BORDER | FLOWPANEL_HORIZONTAL | ELEMENT_H_FILL);
@@ -168,6 +181,8 @@ int main()
 	ElementSetUserHandler(E_OF(textfield), TextfieldMessage);
 	Textfield *textfield2 = TextfieldCreate(E_OF(row3), ELEMENT_H_FILL, 255);
 	TextfieldSetText(textfield2, "HelloWorld!!!", -1);
+
+	tf = textfield2;
 
 	return MessageLoop();
 }

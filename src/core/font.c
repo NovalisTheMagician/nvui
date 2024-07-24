@@ -181,7 +181,7 @@ NVAPI float FontGetLineOffset(Font *font, FontStyle style)
 
 NVAPI size_t FontGetCodepointIndexForOffset(Font *font, FontStyle style, const char *string, size_t bytes, float offset)
 {
-    if(offset <= 0)
+    if(offset <= 0 || !bytes)
         return 0;
 
     FontStyleData *data = &font->styles[style];

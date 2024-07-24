@@ -27,6 +27,11 @@ typedef enum CursorShape
     NumCursors
 } CursorShape;
 
+#define META_KEY_STATE(dp) ((uint16_t)(uintptr_t)dp)
+#define META_SHIFT_DOWN(dp) ((META_KEY_STATE(dp) >> 1) & 1)
+#define META_CTRL_DOWN(dp) ((META_KEY_STATE(dp) >> 2) & 1)
+#define META_ALT_DOWN(dp) ((META_KEY_STATE(dp) >> 0) & 1)
+
 typedef struct Window Window;
 
 NVAPI void Initialize(void);

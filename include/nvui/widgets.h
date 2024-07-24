@@ -48,3 +48,5 @@ typedef struct Textfield Textfield;
 NVAPI Textfield* TextfieldCreate(Element *parent, uint32_t flags, size_t maxChars);
 NVAPI void TextfieldSetText(Textfield *textfield, const char *text, ssize_t textBytes);
 NVAPI char* TextfieldGetText(Textfield *textfield, size_t *textBytes);
+NVAPI void TextfieldSetCursorPos(Textfield *textfield, size_t curosrPos);
+NVAPI void TextfieldSetSelection(Textfield *textfield, size_t start, ssize_t end);

@@ -62,6 +62,7 @@ typedef struct Window
     int cursorX, cursorY;
     Element *hovered, *pressed, *focused;
     int pressedButton;
+    bool shiftDown, ctrlDown, altDown;
 
     GLData glData;
     mat4s projection;

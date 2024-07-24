@@ -309,13 +309,18 @@ static void WindowKeyEvent(Window *window, Message message, int di, void *dp)
 {
     if(window->focused)
     {
-        ElementMessage(window->focused, message, di, dp);
+        if(di == KEY_LCTRL || di == KEY_RCTRL) window->ctrlDown = message == MSG_KEY_DOWN;
+        if(di == KEY_LSHIFT || di == KEY_RSHIFT) window->shiftDown = message == MSG_KEY_DOWN;
+        if(di == KEY_LALT || di == KEY_RALT) window->altDown = message == MSG_KEY_DOWN;
+
+        uint16_t metaState = (window->ctrlDown << 2) | (window->shiftDown << 1) | window->altDown;
+
+        ElementMessage(window->focused, message, di, (void*)(uintptr_t)metaState);
     }
 }
 
 static void WindowCharEvent(Window *window, Message message, int di, void *dp)
 {
-    printf("%c %d (0x%X)\n", di, di, di);
     if(window->focused)
     {
         di = di == '\r' ? '\n' : di;

@@ -26,6 +26,12 @@ static void InsertCharAt(Textfield *textfield, size_t at, int codepoint)
     textfield->textBytes++;
 }
 
+static void RemoveSelection(Textfield *textfield, size_t start, size_t end)
+{
+    size_t amount = end - start;
+
+}
+
 static int TextfieldMessage(Element *element, Message message, int di, void *dp)
 {
     Textfield *textfield = (Textfield*)element;
@@ -80,7 +86,7 @@ static int TextfieldMessage(Element *element, Message message, int di, void *dp)
             PainterSetColor(painter, COLOR_BLUE);
             Rectangle selectRect = textBounds;
             selectRect.l += startOffset;
-            selectRect.r = selectRect.l + (endOffset - startOffset);
+            selectRect.r = selectRect.l + endOffset;
             PainterFillRect(painter, selectRect);
 
             TextColorData colorData[] =
@@ -101,7 +107,7 @@ static int TextfieldMessage(Element *element, Message message, int di, void *dp)
             float w = FontMeasureString(font, DefaultStyle, textfield->text, textfield->cursorPos, 0);
             float offset = round(w);
             PainterDrawLine(painter, textBounds.l + offset, textBounds.t, textBounds.l + offset, textBounds.b);
-        }        
+        }
     }
     else if(message == MSG_DESTROY)
     {
@@ -121,6 +127,10 @@ static int TextfieldMessage(Element *element, Message message, int di, void *dp)
         {
             textfield->cursorPos = textfield->textBytes;
         }
+        else if(di == UPDATE_FOCUS_LOSE)
+        {
+            textfield->selStart = textfield->selEnd = 0;
+        }
 
         ElementRepaint(element, NULL);
     }
@@ -134,8 +144,9 @@ static int TextfieldMessage(Element *element, Message message, int di, void *dp)
         // make it text relative
         x -= PADDING;
         size_t offsetIdx = FontGetCodepointIndexForOffset(font, DefaultStyle, textfield->text, textfield->textBytes, x);
-        
+
         textfield->cursorPos = offsetIdx;
+        textfield->selStart = textfield->selEnd = offsetIdx;
     }
     else if(message == MSG_GET_WIDTH)
     {
@@ -189,13 +200,12 @@ static int TextfieldMessage(Element *element, Message message, int di, void *dp)
     }
     else if(message == MSG_KEY_DOWN)
     {
-        if(di == KEY_LSHIFT || di == KEY_RSHIFT)
-            textfield->shiftDown = true;
+        bool shiftDown = META_SHIFT_DOWN(dp);
 
         if(di == KEY_LEFT && textfield->cursorPos > 0)
         {
             textfield->cursorPos--;
-            if(textfield->shiftDown)
+            if(shiftDown)
             {
                 if(textfield->cursorPos > textfield->selEnd)
                     textfield->selEnd = textfield->cursorPos;
@@ -208,7 +218,7 @@ static int TextfieldMessage(Element *element, Message message, int di, void *dp)
         else if(di == KEY_RIGHT && textfield->cursorPos < textfield->textBytes)
         {
             textfield->cursorPos++;
-            if(textfield->shiftDown)
+            if(shiftDown)
             {
                 if(textfield->cursorPos < textfield->selStart)
                     textfield->selStart = textfield->cursorPos;
@@ -240,8 +250,7 @@ static int TextfieldMessage(Element *element, Message message, int di, void *dp)
     }
     else if(message == MSG_KEY_UP)
     {
-        if(di == KEY_LSHIFT || di == KEY_RSHIFT)
-            textfield->shiftDown = false;
+        
     }
     return 0;
 }
@@ -267,4 +276,30 @@ NVAPI char* TextfieldGetText(Textfield *textfield, size_t *textBytes)
 {
     if(textBytes) *textBytes = textfield->textBytes;
     return textfield->text;
+}
+
+NVAPI void TextfieldSetCursorPos(Textfield *textfield, size_t curosrPos)
+{
+    curosrPos = Clamp(curosrPos, 0, textfield->textBytes);
+    textfield->cursorPos = curosrPos;
+    ElementRepaint((Element*)textfield, NULL);
+}
+
+NVAPI void TextfieldSetSelection(Textfield *textfield, size_t start, ssize_t end)
+{
+    if(end == -1)
+        end = textfield->textBytes;
+    start = Clamp(start, 0, textfield->textBytes);
+    end = Clamp(end, 0, textfield->textBytes);
+
+    if(start > end)
+    {
+        size_t tmp = end;
+        end = start;
+        start = tmp;
+    }
+
+    textfield->selStart = start;
+    textfield->selEnd = end;
+    ElementRepaint((Element*)textfield, NULL);
 }
