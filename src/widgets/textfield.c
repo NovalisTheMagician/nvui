@@ -15,13 +15,13 @@
 
 static void RemoveCharAt(Textfield *textfield, size_t at)
 {
-    memcpy(textfield->text + (at - 1), textfield->text + at, textfield->textBytes - at + 1);
+    memmove(textfield->text + (at - 1), textfield->text + at, textfield->textBytes - at + 1);
     textfield->textBytes--;
 }
 
 static void InsertCharAt(Textfield *textfield, size_t at, int codepoint)
 {
-    memcpy(textfield->text + at + 1, textfield->text + at, textfield->textBytes - at + 1);
+    memmove(textfield->text + at + 1, textfield->text + at, textfield->textBytes - at + 1);
     textfield->text[at] = codepoint;
     textfield->textBytes++;
 }
@@ -29,12 +29,15 @@ static void InsertCharAt(Textfield *textfield, size_t at, int codepoint)
 static void RemoveSelection(Textfield *textfield, size_t start, size_t end)
 {
     size_t amount = end - start;
-
+    size_t rest = textfield->textBytes - end;
+    memmove(textfield->text + start, textfield->text + end, rest + 1);
+    textfield->textBytes -= amount;
 }
 
 static int TextfieldMessage(Element *element, Message message, int di, void *dp)
 {
     Textfield *textfield = (Textfield*)element;
+    bool hasSelection = textfield->selStart != textfield->selEnd;
     if(message == MSG_PAINT)
     {
         Painter *painter = dp;
@@ -75,7 +78,7 @@ static int TextfieldMessage(Element *element, Message message, int di, void *dp)
         textBounds.t += PADDING;
         textBounds.r -= PADDING;
         textBounds.b -= PADDING;
-        if(textfield->selEnd - textfield->selStart == 0)
+        if(!hasSelection)
             PainterDrawString(painter, textBounds, textfield->text, textfield->textBytes, false);
         else
         {
@@ -164,21 +167,35 @@ static int TextfieldMessage(Element *element, Message message, int di, void *dp)
         {
             return 0;
         }
-        else if(di == '\b' && textfield->cursorPos > 0)
+        else if(di == '\b')
         {
-            if(textfield->cursorPos == textfield->textBytes)
+            if(hasSelection)
             {
-                textfield->text[--textfield->cursorPos] = '\0';
-                textfield->textBytes--;
+                RemoveSelection(textfield, textfield->selStart, textfield->selEnd);
+                textfield->cursorPos = textfield->selEnd = textfield->selStart;
             }
-            else
+            else if(textfield->cursorPos > 0)
             {
-                RemoveCharAt(textfield, textfield->cursorPos);
-                textfield->cursorPos--;
+                if(textfield->cursorPos == textfield->textBytes)
+                {
+                    textfield->text[--textfield->cursorPos] = '\0';
+                    textfield->textBytes--;
+                }
+                else
+                {
+                    RemoveCharAt(textfield, textfield->cursorPos);
+                    textfield->cursorPos--;
+                }
             }
         }
         else if(di >= ' ' && di <= 0x7f && textfield->textBytes < textfield->maxTextBytes)
         {
+            if(hasSelection)
+            {
+                RemoveSelection(textfield, textfield->selStart, textfield->selEnd);
+                textfield->cursorPos = textfield->selEnd = textfield->selStart;
+            }
+
             if(textfield->cursorPos == textfield->textBytes)
             {
                 textfield->text[textfield->cursorPos++] = di;
@@ -238,9 +255,17 @@ static int TextfieldMessage(Element *element, Message message, int di, void *dp)
             textfield->cursorPos = textfield->textBytes;
             textfield->selEnd = textfield->selStart = textfield->cursorPos;
         }
-        else if(di == KEY_DELETE && textfield->cursorPos < textfield->textBytes)
+        else if(di == KEY_DELETE)
         {
-            RemoveCharAt(textfield, textfield->cursorPos + 1);
+            if(hasSelection)
+            {
+                RemoveSelection(textfield, textfield->selStart, textfield->selEnd);
+                textfield->cursorPos = textfield->selEnd = textfield->selStart;
+            }
+            else if(textfield->cursorPos < textfield->textBytes)
+            {
+                RemoveCharAt(textfield, textfield->cursorPos + 1);
+            }
         }
         else
         {
