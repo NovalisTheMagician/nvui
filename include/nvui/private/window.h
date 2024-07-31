@@ -4,6 +4,7 @@
 #include "element.h"
 #include "../gltypes.h"
 #include "../window.h"
+#include "menu.h"
 
 #include <cglm/struct.h>
 
@@ -68,6 +69,8 @@ typedef struct Window
     mat4s projection;
     bool buffersNeedResize;
     Font fonts[NumVariants];
+
+    Menu *menu;
 
 #ifdef _WIN32
     HCURSOR currentCursor;

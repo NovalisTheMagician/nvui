@@ -3,6 +3,7 @@
 #include "nvui.h"
 #include "element.h"
 #include "font.h"
+#include "menu.h"
 
 #define WINDOW_NO_RESIZE (1 << 0)
 
@@ -37,6 +38,8 @@ typedef struct Window Window;
 NVAPI void Initialize(void);
 NVAPI int MessageLoop(void);
 NVAPI void SetMainWindow(Window *window);
+
+NVAPI void WindowSetMenu(Window *window, Menu *menu);
 
 NVAPI Window* WindowCreate(const char *title, int width, int height);
 NVAPI Element* WindowGetRootElement(Window *window);

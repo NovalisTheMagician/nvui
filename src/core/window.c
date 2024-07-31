@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <uchar.h>
+#include <tgmath.h>
 
 #include "nvui/element.h"
 #include "nvui/private/window.h"
@@ -15,6 +16,8 @@
 #define WINDOW_MIN_WIDTH 200
 #define WINDOW_MIN_HEIGHT 200
 #define BUFFER_SIZE 1024 * 64 //64k vertices as a draw buffer. that should support complex drawing operations
+#define MENUBAR_HEIGHT 24
+#define MENUITEM_MARGIN 6
 
 typedef struct GlobalState
 {
@@ -184,8 +187,42 @@ static int WindowMessage(Element *element, Message message, int di, void *dp)
         element->window->buffersNeedResize = true;
         if(element->childCount)
         {
-            ElementMove(element->children[0], element->bounds, false);
+            Rectangle bounds = element->bounds;
+            if(element->window->menu)
+            {
+                bounds.t += MENUBAR_HEIGHT;
+            }
+            ElementMove(element->children[0], bounds, false);
             ElementRepaint(element, NULL);
+        }
+    }
+    if(message == MSG_PAINT && element->window->menu)
+    {
+        Menu *menu = element->window->menu;
+        Painter *painter = dp;
+
+        Rectangle bounds = element->bounds;
+        bounds.b = MENUBAR_HEIGHT;
+
+        PainterSetColor(painter, COLOR_GREEN);
+        PainterFillRect(painter, bounds);
+
+        Font *menuFont = WindowGetFontVariant(element->window, DefaultVariant);
+
+        int prevLeft = 0;
+        for(size_t i = 0; i < menu->numItems; ++i)
+        {
+            MenuItem *item = menu->items[i];
+            Rectangle menuBounds = bounds;
+            menuBounds.l = prevLeft;
+            menuBounds.r = prevLeft + floor(FontMeasureString(menuFont, DefaultStyle, item->name, item->nameBytes, 0)) + MENUITEM_MARGIN*2;
+            prevLeft = menuBounds.r;
+            PainterSetColor(painter, COLOR_BLUE);
+            PainterFillRect(painter, menuBounds);
+            PainterSetColor(painter, COLOR_BLACK);
+            PainterDrawRect(painter, menuBounds);
+            PainterSetColor(painter, COLOR_WHITE);
+            PainterDrawString(painter, menuBounds, item->name, item->nameBytes, true);
         }
     }
     return 0;
@@ -307,14 +344,13 @@ static void WindowInputEvent(Window *window, Message message, int di, void *dp)
 
 static void WindowKeyEvent(Window *window, Message message, int di, void *dp)
 {
+    if(di == KEY_LCTRL || di == KEY_RCTRL) window->ctrlDown = message == MSG_KEY_DOWN;
+    if(di == KEY_LSHIFT || di == KEY_RSHIFT) window->shiftDown = message == MSG_KEY_DOWN;
+    if(di == KEY_LALT || di == KEY_RALT) window->altDown = message == MSG_KEY_DOWN;
+
     if(window->focused)
     {
-        if(di == KEY_LCTRL || di == KEY_RCTRL) window->ctrlDown = message == MSG_KEY_DOWN;
-        if(di == KEY_LSHIFT || di == KEY_RSHIFT) window->shiftDown = message == MSG_KEY_DOWN;
-        if(di == KEY_LALT || di == KEY_RALT) window->altDown = message == MSG_KEY_DOWN;
-
         uint16_t metaState = (window->ctrlDown << 2) | (window->shiftDown << 1) | window->altDown;
-
         ElementMessage(window->focused, message, di, (void*)(uintptr_t)metaState);
     }
 }
@@ -411,6 +447,8 @@ static void Update(Window *window)
 {
     if(ElementDestroyNow(window->e.children[0]))
     {
+        if(window->menu)
+            MenuDestroy(window->menu);
         RemoveWindow(window);
     }
     else if(RectangleValid(window->updateRegion))
@@ -498,6 +536,11 @@ NVAPI void SetMainWindow(Window *window)
 {
     if(window)
         global.mainWindow = window;
+}
+
+NVAPI void WindowSetMenu(Window *window, Menu *menu)
+{
+    window->menu = menu;
 }
 
 NVAPI Element* WindowGetPressed(Window *window)

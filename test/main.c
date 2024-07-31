@@ -1,6 +1,7 @@
 #include <nvui/window.h>
 #include <nvui/painter.h>
 #include <nvui/widgets.h>
+#include <nvui/menu.h>
 
 #include <stdio.h>
 
@@ -117,8 +118,15 @@ int main()
 {
 	Initialize();
 
+	Menu *windowMenu = MenuCreate();
+	MenuItem *fileMenu = MenuItemCreate("File", -1, 0);
+	MenuItem *settingsMenu = MenuItemCreate("Settings", -1, 0);
+	MenuAddItem(windowMenu, fileMenu);
+	MenuAddItem(windowMenu, settingsMenu);
+
 	Window *window1 = WindowCreate("Window 1", 1000, 800);
 	if(!window1) return 1;
+	WindowSetMenu(window1, windowMenu);
 
 	FlowPanel *column1 = FlowPanelCreate(WindowGetRootElement(window1), 0);
 	FlowPanelSetGap(column1, 10);
