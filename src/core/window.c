@@ -1208,6 +1208,10 @@ static Keycode TranslateKey(unsigned int xkey)
     {
     case XK_Left: return KEY_LEFT;
     case XK_Right: return KEY_RIGHT;
+    case XK_Control_L: return KEY_LCTRL;
+    case XK_Control_R: return KEY_RCTRL;
+    case XK_Shift_L: return KEY_LSHIFT;
+    case XK_Shift_R: return KEY_RSHIFT;
     }
     return KEY_NONE;
 }
