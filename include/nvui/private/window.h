@@ -30,6 +30,23 @@
 #undef CursorShape
 #endif
 
+typedef struct GlobalState
+{
+    Window **windows;
+    size_t windowCount;
+    Window *mainWindow;
+#ifdef WIN32
+    HCURSOR cursors[NumCursors];
+#elif defined(__linux__)
+    Cursor cursors[NumCursors];
+    Display *display;
+    Atom windowClosedID;
+    XIM inputMethod;
+    XIMStyle bestStyle;
+#endif
+} GlobalState;
+extern GlobalState global;
+
 typedef struct GLData
 {
     GLuint colorRb, depthRb, framebuffer;
@@ -90,3 +107,21 @@ typedef struct Window
     XIC inputContext;
 #endif
 } Window;
+
+#define WINDOW_MIN_WIDTH 200
+#define WINDOW_MIN_HEIGHT 200
+#define BUFFER_SIZE 1024 * 64 //64k vertices as a draw buffer. that should support complex drawing operations
+#define MENUBAR_HEIGHT 24
+#define MENUITEM_MARGIN 6
+
+bool InitGLData(Window *window);
+void Update(Window *window);
+void RemoveWindow(Window *window);
+void DestroyGLData(Window *window);
+void ResizeTextures(Window *window);
+
+int WindowMessage(Element *element, Message message, int di, void *dp);
+void WindowInputEvent(Window *window, Message message, int di, void *dp);
+void WindowKeyEvent(Window *window, Message message, int di, void *dp);
+void WindowCharEvent(Window *window, Message message, int di, void *dp);
+void GLDebugCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *user);
