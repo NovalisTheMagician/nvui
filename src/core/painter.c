@@ -186,6 +186,7 @@ NVAPI void PainterDrawString(Painter *painter, Rectangle bounds, const char *str
     glBindTextureUnit(0, font->styles[style].texture);
     glDrawArrays(GL_TRIANGLES, startVertex, 6 * bytes);
     glUseProgram(painter->gldata.shaderProgram);
+    glBindTextureUnit(0, painter->gldata.whiteTexture);
     glDisable(GL_BLEND);
 }
 

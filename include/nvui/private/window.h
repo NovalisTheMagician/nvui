@@ -71,6 +71,7 @@ typedef struct Window
     Font fonts[NumVariants];
 
     Menu *menu;
+    MenuItem *itemHovered;
 
 #ifdef _WIN32
     HCURSOR currentCursor;

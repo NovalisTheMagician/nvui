@@ -190,24 +190,28 @@ static int WindowMessage(Element *element, Message message, int di, void *dp)
             Rectangle bounds = element->bounds;
             if(element->window->menu)
             {
-                bounds.t += MENUBAR_HEIGHT;
+                bounds.t += MENUBAR_HEIGHT+1;
             }
             ElementMove(element->children[0], bounds, false);
             ElementRepaint(element, NULL);
         }
     }
-    if(message == MSG_PAINT && element->window->menu)
+    else if(message == MSG_PAINT && element->window->menu)
     {
-        Menu *menu = element->window->menu;
+        Window *window = element->window;
+        Menu *menu = window->menu;
         Painter *painter = dp;
 
         Rectangle bounds = element->bounds;
         bounds.b = MENUBAR_HEIGHT;
 
-        PainterSetColor(painter, COLOR_GREEN);
+        PainterSetColor(painter, COLOR_CONTROL);
         PainterFillRect(painter, bounds);
 
-        Font *menuFont = WindowGetFontVariant(element->window, DefaultVariant);
+        PainterSetColor(painter, ColorFromGrayscale(0.45f));
+        PainterDrawLine(painter, bounds.l, bounds.b+1, bounds.r, bounds.b+1);
+
+        Font *menuFont = WindowGetFontVariant(window, DefaultVariant);
 
         int prevLeft = 0;
         for(size_t i = 0; i < menu->numItems; ++i)
@@ -217,13 +221,29 @@ static int WindowMessage(Element *element, Message message, int di, void *dp)
             menuBounds.l = prevLeft;
             menuBounds.r = prevLeft + floor(FontMeasureString(menuFont, DefaultStyle, item->name, item->nameBytes, 0)) + MENUITEM_MARGIN*2;
             prevLeft = menuBounds.r;
-            PainterSetColor(painter, COLOR_BLUE);
+
+            Color backColor = item == window->itemHovered ? COLOR_BLUE : COLOR_CONTROL;
+
+            PainterSetColor(painter, backColor);
             PainterFillRect(painter, menuBounds);
-            PainterSetColor(painter, COLOR_BLACK);
-            PainterDrawRect(painter, menuBounds);
-            PainterSetColor(painter, COLOR_WHITE);
-            PainterDrawString(painter, menuBounds, item->name, item->nameBytes, true);
+
+            Color textColor = item == window->itemHovered ? COLOR_WHITE : COLOR_BLACK;
+
+            PainterSetColor(painter, textColor);
+            Rectangle menuTextBounds = menuBounds;
+            menuTextBounds.l += MENUITEM_MARGIN;
+            menuTextBounds.r -= MENUITEM_MARGIN;
+            menuTextBounds.t += 2;
+            PainterDrawString(painter, menuTextBounds, item->name, item->nameBytes, false);
         }
+    }
+    else if(message == MSG_MOUSE_MOVE)
+    {
+        
+    }
+    else if(message == MSG_LEFT_DOWN)
+    {
+        
     }
     return 0;
 }

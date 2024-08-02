@@ -11,7 +11,7 @@ typedef struct Painter
 {
     Rectangle clip;
     int width, height;
-    Color backColor, frontColor;
+    Color backColor;
     StrokeStyle strokeStyle;
     FillStyle fillStyle;
     float lineWidth;

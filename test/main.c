@@ -121,8 +121,10 @@ int main()
 	Menu *windowMenu = MenuCreate();
 	MenuItem *fileMenu = MenuItemCreate("File", -1, 0);
 	MenuItem *settingsMenu = MenuItemCreate("Settings", -1, 0);
+	MenuItem *helpMenu = MenuItemCreate("Help", -1, 0);
 	MenuAddItem(windowMenu, fileMenu);
 	MenuAddItem(windowMenu, settingsMenu);
+	MenuAddItem(windowMenu, helpMenu);
 
 	Window *window1 = WindowCreate("Window 1", 1000, 800);
 	if(!window1) return 1;
