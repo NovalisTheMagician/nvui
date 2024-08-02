@@ -87,7 +87,7 @@ void WindowEndPaint(Window *window, Painter *painter)
 {
 }
 
-static Keycode TranslateKey(WPARAM wParam)
+static inline Keycode TranslateKey(WPARAM wParam)
 {
     switch(wParam)
     {

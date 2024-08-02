@@ -190,7 +190,7 @@ NVAPI Window* WindowCreate(const char *title, int width, int height)
     return window;
 }
 
-static Keycode TranslateKey(unsigned int xkey)
+static inline Keycode TranslateKey(unsigned int xkey)
 {
     switch(xkey)
     {
