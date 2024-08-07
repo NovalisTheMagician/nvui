@@ -1,3 +1,4 @@
+#ifdef _WIN32
 #include "nvui/window.h"
 
 #include <uchar.h>
@@ -6,7 +7,6 @@
 #include "nvui/private/painter.h"
 #include "nvui/keys.h"
 
-#ifdef _WIN32
 #define WINDOW_CLASS L"NVWINDOW"
 
 static bool glFuncsLoaded = false;

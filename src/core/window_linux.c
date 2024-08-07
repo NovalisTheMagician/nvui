@@ -1,3 +1,4 @@
+#if defined __linux__
 #include "nvui/window.h"
 
 #include <uchar.h>
@@ -7,7 +8,6 @@
 #include "nvui/private/painter.h"
 #include "nvui/keys.h"
 
-#if defined __linux__
 
 static bool glFuncsLoaded = false;
 
